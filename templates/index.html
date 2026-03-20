@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoadEye – AI-Based Driver Safety Monitoring System</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<header class="navbar" id="navbar">
+  <div class="logo"><i class="fa-solid fa-eye"></i> RoadEye</div>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#solution">Solution</a>
+    <a href="#how">How It Works</a>
+    <a href="#features">Features</a>
+    <a href="#mvp">MVP</a>
+    <a href="#future">Future</a>
+  </nav>
+  <div class="nav-buttons">
+    <a href="/login" class="btn-outline">Login</a>
+    <a href="/signup" class="btn-primary-nav">Get Started</a>
+   
+</header>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-content">
+    <div class="hero-badge"><i class="fa-solid fa-shield-halved"></i> AI-Based Road Safety System</div>
+    <h1 class="hero-title">RoadEye – <span class="gradient">AI-Based Driver</span><br>Safety Monitoring System</h1>
+    <p class="hero-sub">Real-time road risk detection using weather, location, and environmental conditions</p>
+    <p class="hero-tagline">"Drive Smart. Stay Safe. Avoid Risks."</p>
+    <div class="hero-buttons">
+      <a href="/signup" class="btn-primary"><i class="fa-solid fa-rocket"></i> Get Started</a>
+      <a href="/login" class="btn-ghost"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+      <a href="#how" class="btn-ghost"><i class="fa-solid fa-circle-info"></i> Learn More</a>
+    </div>
+    <div class="hero-quote">
+      <i class="fa-solid fa-quote-left"></i>
+      RoadEye does not predict accidents — it helps prevent them.
+      <i class="fa-solid fa-quote-right"></i>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="dashboard-mockup">
+      <div class="mock-header">
+        <span class="mock-dot red"></span><span class="mock-dot yellow"></span><span class="mock-dot green"></span>
+        <span class="mock-title">RoadEye Dashboard</span>
+      </div>
+      <div class="mock-body">
+        <div class="mock-card"><div class="mock-label">📍 Location</div><div class="mock-val">Jaipur, Rajasthan</div></div>
+        <div class="mock-card"><div class="mock-label">🌡️ Temperature</div><div class="mock-val">24.1 °C</div></div>
+        <div class="mock-card"><div class="mock-label">🌤️ Weather</div><div class="mock-val">Overcast ☁️</div></div>
+        <div class="mock-risk medium">⚡ MEDIUM RISK<span>Drive Carefully — Stay Focused</span></div>
+        <div class="mock-advisory">
+          <div>👀 Stay alert to traffic</div>
+          <div>📵 No phone while driving</div>
+          <div>🚗 Maintain safe distance</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="problem" class="section problem-section">
+  <div class="section-inner">
+    <div class="section-badge prob-badge">⚠️ The Problem</div>
+    <h2 class="section-title">The Problem We Solve</h2>
+    <p class="section-desc">Every day, thousands of road accidents happen due to poor visibility, bad weather, and lack of driver awareness. Drivers often do not understand the risk level of the environment they are driving in, which leads to unsafe decisions.</p>
+    <div class="problem-grid">
+      <div class="problem-card"><div class="prob-icon">🌧️</div><h3>Bad Weather</h3><p>Rain, fog, and storms drastically reduce visibility and increase accident risk.</p></div>
+      <div class="problem-card"><div class="prob-icon">😴</div><h3>Lack of Awareness</h3><p>Drivers are unaware of the current risk level of their surroundings while driving.</p></div>
+      <div class="problem-card"><div class="prob-icon">📱</div><h3>No Single Tool</h3><p>No tool gives weather, location risk, and safety advice all in one place.</p></div>
+      <div class="problem-card"><div class="prob-icon">⚠️</div><h3>Accident-Prone Zones</h3><p>Drivers pass through blackspots without any prior warning.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section id="solution" class="section solution-section">
+  <div class="section-inner sol-row">
+    <div class="sol-text">
+      <div class="section-badge sol-badge">💡 Our Solution</div>
+      <h2 class="section-title">Our Solution – RoadEye</h2>
+      <p class="section-desc">RoadEye is an intelligent system that monitors real-time environmental conditions and predicts accident risk. It provides drivers with instant alerts and safety recommendations to help them make better decisions on the road.</p>
+      <ul class="sol-list">
+        <li><i class="fa-solid fa-check"></i> No need to open a separate weather app — weather, risk and advisory all in one place.</li>
+        <li><i class="fa-solid fa-check"></i> Understand whether conditions are safe, moderate, or dangerous instantly.</li>
+        <li><i class="fa-solid fa-check"></i> Simple safety tips tailored to the current environment.</li>
+        <li><i class="fa-solid fa-check"></i> View risk history to understand patterns in your regular routes.</li>
+      </ul>
+    </div>
+    <div class="sol-cards">
+      <div class="sol-card green-card"><div class="sol-icon-box">✅</div><div><strong>LOW RISK</strong><p>Conditions are safe. Drive at normal speed and stay alert.</p></div></div>
+      <div class="sol-card orange-card"><div class="sol-icon-box">⚡</div><div><strong>MEDIUM RISK</strong><p>Environment needs attention. Stay focused — do not drive recklessly.</p></div></div>
+      <div class="sol-card red-card"><div class="sol-icon-box">🚨</div><div><strong>HIGH RISK</strong><p>Dangerous conditions. Reduce speed. Exercise extreme caution.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="section how-section">
+  <div class="section-inner">
+    <div class="section-badge how-badge">⚙️ Process</div>
+    <h2 class="section-title">How RoadEye Works</h2>
+    <div class="steps-row">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-icon-big">📡</div>
+        <h3>Environment Detection</h3>
+        <p>Collects real-time GPS location, weather, temperature, humidity, wind speed, and time of day.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-icon-big">🧠</div>
+        <h3>Risk Prediction</h3>
+        <p>Calculates a risk score from environmental inputs using rule-based intelligent logic.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-icon-big">🔔</div>
+        <h3>Driver Advisory</h3>
+        <p>Provides tailored safety alerts: reduce speed, maintain distance, stay alert, use headlights.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="section features-section">
+  <div class="section-inner">
+    <div class="section-badge feat-badge">📊 Features</div>
+    <h2 class="section-title">Key Features</h2>
+    <div class="feature-grid">
+      <div class="feature-card"><div class="feat-icon">📍</div><h3>Real-Time GPS Tracking</h3><p>Detects your exact location and checks for nearby accident-prone zones.</p></div>
+      <div class="feature-card"><div class="feat-icon">🌦️</div><h3>Live Weather Monitoring</h3><p>Fetches live temperature, humidity, wind speed using Open-Meteo API — no separate app needed.</p></div>
+      <div class="feature-card"><div class="feat-icon">🧠</div><h3>Rule-Based Risk Prediction</h3><p>Calculates risk score from environmental factors. Understand risk before you drive.</p></div>
+      <div class="feature-card"><div class="feat-icon">🔔</div><h3>Driver Safety Alerts</h3><p>Real-time advisories based on risk level — reduce speed, stay alert, use fog lights.</p></div>
+      <div class="feature-card"><div class="feat-icon">📊</div><h3>Safety Indicators</h3><p>Visual bars for Visibility, Traffic Density, and Road Condition updated in real time.</p></div>
+      <div class="feature-card"><div class="feat-icon">📜</div><h3>Risk History & Insights</h3><p>View your recent risk checks and safety patterns from the dedicated Insights page.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD PREVIEW TEXT -->
+<section class="section dash-section">
+  <div class="section-inner dash-inner">
+    <div>
+      <div class="section-badge">🖥️ Dashboard</div>
+      <h2 class="section-title">Smart Dashboard</h2>
+      <p class="section-desc">A centralized dashboard that shows real-time environment data, risk level, and driver advisory — all in one place. No need to switch between multiple apps.</p>
+      <div class="dash-chips">
+        <span><i class="fa-solid fa-location-dot"></i> Live GPS & City</span>
+        <span><i class="fa-solid fa-cloud-sun"></i> Weather + Temp</span>
+        <span><i class="fa-solid fa-gauge-high"></i> Risk Score</span>
+        <span><i class="fa-solid fa-triangle-exclamation"></i> Driver Advisory</span>
+        <span><i class="fa-solid fa-chart-bar"></i> Safety Indicators</span>
+        <span><i class="fa-solid fa-clock-rotate-left"></i> Risk History</span>
+      </div>
+      <a href="/signup" class="btn-primary" style="margin-top:24px;display:inline-flex;">Try Dashboard →</a>
+    </div>
+  </div>
+</section>
+
+<!-- MVP -->
+<section id="mvp" class="section mvp-section">
+  <div class="section-inner">
+    <div class="section-badge mvp-badge">🧪 MVP</div>
+    <h2 class="section-title">Minimum Viable Product (MVP)</h2>
+    <p class="section-desc">This version focuses on core functionality that makes RoadEye useful right now.</p>
+    <div class="mvp-grid">
+      <div class="mvp-col included">
+        <h3><i class="fa-solid fa-circle-check"></i> Included in MVP</h3>
+        <ul>
+          <li>Environment detection (GPS, weather, time)</li>
+          <li>Rule-based risk prediction engine</li>
+          <li>Driver advisory messages</li>
+          <li>Safety indicator bars</li>
+          <li>Risk history tracking</li>
+          <li>User login and signup system</li>
+        </ul>
+      </div>
+      <div class="mvp-col upcoming">
+        <h3><i class="fa-solid fa-clock"></i> Coming in Future Updates</h3>
+        <ul>
+          <li>Real-time traffic analysis</li>
+          <li>Machine learning model integration</li>
+          <li>Route-based risk prediction</li>
+          <li>Voice-based driver alerts</li>
+          <li>Mobile application</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FUTURE SCOPE -->
+<section id="future" class="section future-section">
+  <div class="section-inner">
+    <div class="section-badge fut-badge">🔮 Future</div>
+    <h2 class="section-title">Future Enhancements</h2>
+    <div class="future-grid">
+      <div class="future-card"><span>📊</span><p>Integration with real accident datasets</p></div>
+      <div class="future-card"><span>🚦</span><p>Real-time traffic analysis</p></div>
+      <div class="future-card"><span>🔊</span><p>Voice-based driver alerts</p></div>
+      <div class="future-card"><span>📱</span><p>Mobile application</p></div>
+      <div class="future-card"><span>🗺️</span><p>Route-based risk prediction</p></div>
+      <div class="future-card"><span>🤖</span><p>Full ML model with accident data</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section cta-section">
+  <div class="section-inner cta-inner">
+    <h2>Start Driving Safely Today</h2>
+    <p>Join RoadEye and make smarter driving decisions with real-time safety insights.</p>
+    <div class="cta-buttons">
+      <a href="/signup" class="btn-primary"><i class="fa-solid fa-rocket"></i> Get Started</a>
+      <a href="/signup" class="btn-ghost-white"><i class="fa-solid fa-user-plus"></i> Sign Up Now</a>
+    </div>
+    <p class="cta-quote">"RoadEye does not predict accidents — it helps prevent them."</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo"><i class="fa-solid fa-eye"></i> RoadEye</div>
+      <p>AI-Based Road Safety System</p>
+    </div>
+    <div class="footer-col">
+      <h4>Powered By</h4>
+      <p><i class="fa-solid fa-cloud"></i> Open-Meteo Weather API</p>
+      <p><i class="fa-solid fa-location-dot"></i> GPS Browser Technology</p>
+      <p><i class="fa-solid fa-brain"></i> Rule-Based Risk Analysis</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigate</h4>
+      <p><a href="/login">Login</a></p>
+      <p><a href="/signup">Sign Up</a></p>
+      <p><a href="/dashboard">Dashboard</a></p>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 RoadEye – AI-Based Road Safety System. All rights reserved.</div>
+</footer>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

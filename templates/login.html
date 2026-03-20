@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoadEye – Login</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="auth-page">
+
+<div class="auth-wrapper">
+
+  <!-- LEFT PANEL -->
+  <div class="auth-left">
+    <div class="auth-brand">
+      <i class="fa-solid fa-eye"></i>
+      <span>RoadEye</span>
+    </div>
+    <h2>Welcome Back, Driver</h2>
+    <p>Sign in to your RoadEye account to continue monitoring road safety in real time.</p>
+    <div class="auth-quote">"RoadEye does not predict accidents — it helps prevent them."</div>
+    <div class="auth-info-list">
+      <div class="auth-info-item"><i class="fa-solid fa-location-dot"></i> Live GPS Location Tracking</div>
+      <div class="auth-info-item"><i class="fa-solid fa-cloud-sun"></i> Real-Time Weather Monitoring</div>
+      <div class="auth-info-item"><i class="fa-solid fa-brain"></i> Rule-Based Risk Prediction</div>
+      <div class="auth-info-item"><i class="fa-solid fa-bell"></i> Instant Driver Advisories</div>
+    </div>
+    <div class="auth-badges">
+      <span class="auth-badge">Rule-Based Prediction</span>
+      <span class="auth-badge">Free to Use</span>
+      <span class="auth-badge">Real-Time Safety</span>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="auth-right">
+    <div class="auth-card">
+      <h2>Sign In</h2>
+      <p class="auth-sub">Enter your credentials to access your dashboard</p>
+
+      <form id="loginForm" action="/login" method="POST">
+
+        <div class="input-group">
+          <i class="fa-regular fa-envelope"></i>
+          <input type="email" name="email" id="loginEmail" placeholder="Email Address" autocomplete="email" required>
+        </div>
+        <span class="field-error" id="loginEmailErr"></span>
+
+        <div class="input-group">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" name="password" id="loginPassword" placeholder="Password" required>
+          <span class="toggle-pass" onclick="togglePass('loginPassword', this)">
+            <i class="fa-regular fa-eye"></i>
+          </span>
+        </div>
+        <span class="field-error" id="loginPassErr"></span>
+
+        <div class="login-options">
+          <label class="remember-me">
+            <input type="checkbox" name="remember"> Remember me
+          </label>
+          
+        </div>
+
+        <button type="submit" class="auth-btn">Login In</button>
+
+        <p class="auth-switch">
+          Don't have an account? <a href="/signup">Sign Up</a>
+        </p>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+
+
+<button class="theme-toggle-float" id="themeToggle" title="Toggle Theme">🌙</button>
+<script src="{{ url_for('static', filename='auth.js') }}"></script>
+</body>
+</html>

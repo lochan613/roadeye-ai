@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoadEye – Sign Up</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="auth-page">
+
+<div id="g_id_onload"
+     data-client_id="YOUR_GOOGLE_CLIENT_ID"
+     data-callback="handleGoogleLogin"
+     data-auto_prompt="false">
+</div>
+
+<div class="auth-wrapper">
+
+  <!-- LEFT PANEL -->
+  <div class="auth-left">
+    <div class="auth-brand">
+      <i class="fa-solid fa-eye"></i>
+      <span>RoadEye</span>
+    </div>
+    <h2>AI-Based Driver Safety Monitoring System</h2>
+    <p>Real-time risk detection using weather, GPS, and environmental data.</p>
+    <div class="auth-quote">"Drive Smart. Stay Safe. Avoid Risks."</div>
+    <div class="auth-info-list">
+      <div class="auth-info-item"><i class="fa-solid fa-location-dot"></i> Live GPS Location Tracking</div>
+      <div class="auth-info-item"><i class="fa-solid fa-cloud-sun"></i> Real-Time Weather Monitoring</div>
+      <div class="auth-info-item"><i class="fa-solid fa-brain"></i> Rule-Based Risk Prediction</div>
+      <div class="auth-info-item"><i class="fa-solid fa-bell"></i> Instant Driver Advisories</div>
+    </div>
+    <div class="auth-badges">
+      <span class="auth-badge">Rule-Based Prediction</span>
+      <span class="auth-badge">Free to Use</span>
+      <span class="auth-badge">No API Key Needed</span>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="auth-right">
+    <div class="auth-card">
+      <h2>Create Account</h2>
+      <p class="auth-sub">Join RoadEye to start driving safely</p>
+
+      <form id="signupForm" action="/signup" method="POST">
+
+        <div class="input-group">
+          <i class="fa-regular fa-user"></i>
+          <input type="text" name="name" id="name" placeholder="Full Name" autocomplete="name">
+        </div>
+        <span class="field-error" id="nameErr"></span>
+
+        <div class="input-group">
+          <i class="fa-regular fa-envelope"></i>
+          <input type="email" name="email" id="email" placeholder="Email Address" autocomplete="email">
+        </div>
+        <span class="field-error" id="emailErr"></span>
+
+        <div class="input-group">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" name="password" id="password" placeholder="Create Password">
+          
+        </div>
+        <span class="field-error" id="passErr"></span>
+
+        <button type="submit" class="auth-btn">Create Account</button>
+
+        <div class="divider-line"><span>Or sign up with</span></div>
+
+        <div class="google-btn-wrap">
+          <div class="g_id_signin"
+               data-type="standard"
+               data-shape="rectangular"
+               data-theme="outline"
+               data-text="signup_with"
+               data-size="large"
+               data-width="320"
+               data-logo_alignment="left">
+          </div>
+        </div>
+
+        <p class="auth-switch">
+          Already have an account? <a href="/login">Login</a>
+        </p>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+
+
+<script src="{{ url_for('static', filename='auth.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoadEye – Dashboard</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo"><i class="fa-solid fa-eye"></i> RoadEye</div>
+    <div class="header-title">AI Driver Safety Monitoring System</div>
+  </div>
+  <div class="header-right">
+    <div class="user-menu" id="userMenu">
+      <div class="user-avatar" id="userAvatar">P</div>
+      <div class="user-info">
+        <span class="user-name" id="headerUserName">Driver</span>
+        <span class="user-role">My Account</span>
+        
+      </div>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="dropdown-item"><i class="fa-solid fa-user"></i> <span id="dropdownName">Driver</span></div>
+        <div class="dropdown-item"><i class="fa-solid fa-envelope"></i> <span id="dropdownEmail">--</span></div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item" onclick="window.location.href='/secondary'"><i class="fa-solid fa-chart-bar"></i> Safety Insights</div>
+        <div class="dropdown-item danger" onclick="confirmLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+      </div>
+    </div>
+    <a href="/secondary" class="insights-btn"><i class="fa-solid fa-chart-bar"></i> Safety Insights</a>
+  </div>
+</header>
+
+<!-- DASHBOARD GRID -->
+<div class="dash-container">
+
+  <!-- Card 1: Current Environment -->
+  <div class="card" id="envCard">
+    <div class="card-head"><i class="fa-solid fa-map-location-dot card-icon blue"></i><h2>Current Environment</h2></div>
+    <div class="env-item"><span><i class="fa-solid fa-location-dot"></i> Location</span><p id="location">Detecting GPS...</p></div>
+    <div class="env-item"><span><i class="fa-solid fa-city"></i> City</span><p id="city">Fetching...</p></div>
+    <div class="env-item"><span><i class="fa-solid fa-temperature-half"></i> Temperature</span><p id="temperature">Loading...</p></div>
+    <div class="env-item"><span><i class="fa-solid fa-cloud-sun"></i> Weather</span><p id="weather">Loading...</p></div>
+    <div class="env-item"><span><i class="fa-solid fa-droplet"></i> Humidity</span><p id="humidity">Loading...</p></div>
+    <div class="env-item"><span><i class="fa-solid fa-wind"></i> Wind Speed</span><p id="windspeed">Loading...</p></div>
+    <div class="env-item"><span><i class="fa-regular fa-clock"></i> Time</span><p id="time">--:--:--</p></div>
+    <div class="env-item"><span><i class="fa-solid fa-triangle-exclamation"></i> Blackspot</span><p id="blackspot">Checking...</p></div>
+    <div id="gps-status" class="gps-status info">📡 Initialising GPS...</div>
+  </div>
+
+  <!-- Card 2: AI Risk Prediction -->
+  <div class="card risk-panel" id="riskCard">
+    <div class="card-head"><i class="fa-solid fa-brain card-icon purple"></i><h2>Risk Prediction</h2></div>
+    <div id="riskIndicator" class="risk-box waiting">
+      <div class="risk-box-icon">🛡️</div>
+      <div class="risk-box-text">Waiting for prediction</div>
+      <div class="risk-box-sub">Click "Check Risk" to analyse</div>
+    </div>
+    <button onclick="predictRisk()" class="predict-btn" id="predictBtn">
+      <i class="fa-solid fa-gauge-high"></i> Check Current Risk
+    </button>
+    <div class="risk-note">
+      <i class="fa-solid fa-circle-info"></i>
+      Risk reflects current environment — not your speed. Medium risk means stay focused, not that an accident will happen.
+    </div>
+  </div>
+
+  <!-- Card 3: Driver Advisory -->
+  <div class="card" id="advisoryCard">
+    <div class="card-head"><i class="fa-solid fa-bell card-icon orange"></i><h2>Driver Advisory</h2></div>
+    <ul id="advisoryList">
+      <li class="advisory-loading"><i class="fa-solid fa-spinner fa-spin"></i> Fetching live conditions...</li>
+    </ul>
+  </div>
+
+  <!-- Card 4: Safety Indicators -->
+  <div class="card" id="indicatorsCard">
+    <div class="card-head"><i class="fa-solid fa-chart-bar card-icon green"></i><h2>Safety Indicators</h2></div>
+    <div class="indicator">
+      <div class="ind-label"><span>Visibility</span><span id="visibilityPct">50%</span></div>
+      <div class="bar"><div id="visibilityBar" class="fill" style="width:50%"></div></div>
+    </div>
+    <div class="indicator">
+      <div class="ind-label"><span>Traffic Density</span><span id="trafficPct">50%</span></div>
+      <div class="bar"><div id="trafficBar" class="fill" style="width:50%"></div></div>
+    </div>
+    <div class="indicator">
+      <div class="ind-label"><span>Road Condition</span><span id="roadPct">50%</span></div>
+      <div class="bar"><div id="roadBar" class="fill" style="width:50%"></div></div>
+    </div>
+    <div class="indicator">
+      <div class="ind-label"><span>Weather Safety</span><span id="weatherPct">50%</span></div>
+      <div class="bar"><div id="weatherBar" class="fill" style="width:50%"></div></div>
+    </div>
+  </div>
+
+ 
+
+  <!-- Card 6: Quick Actions -->
+  <div class="card" id="actionsCard">
+    <div class="card-head"><i class="fa-solid fa-bolt card-icon yellow"></i><h2>Quick Actions</h2></div>
+    <div class="action-item" onclick="window.location.href='/secondary'">
+      <div class="action-icon-box"><i class="fa-solid fa-chart-bar"></i></div>
+      <div class="action-info"><div class="action-title">Safety Insights</div><div class="action-sub">View history and analytics</div></div>
+      <i class="fa-solid fa-chevron-right action-arrow"></i>
+    
+    <div class="action-item" onclick="showRouteComing()">
+      <div class="action-icon-box"><i class="fa-solid fa-route"></i></div>
+      <div class="action-info">
+        <div class="action-title">Route Risk <span class="coming-soon">Soon</span></div>
+        <div class="action-sub">Risk analysis for planned routes</div>
+      </div>
+      <i class="fa-solid fa-chevron-right action-arrow"></i>
+    </div>
+    
+  </div>
+
+  <!-- Card 7: Safety Tips -->
+  <div class="card" id="tipsCard">
+    <div class="card-head"><i class="fa-solid fa-lightbulb card-icon yellow"></i><h2>Safety Tips</h2></div>
+    <ul class="tips-list" id="tipsList">
+      <li>🚗 Always wear your seatbelt before starting the engine.</li>
+      <li>📵 Never use your phone while driving.</li>
+      <li>👀 Keep a safe following distance at all times.</li>
+      <li>🌧️ Reduce speed in rain or foggy conditions.</li>
+      <li>💡 Keep headlights on during low visibility hours.</li>
+      <li>😴 Take a break every 2 hours on long drives.</li>
+    </ul>
+  </div>
+
+  <!-- Card 8: Live Stats -->
+  <div class="card" id="statsCard">
+    <div class="card-head"><i class="fa-solid fa-signal card-icon green"></i><h2>Live Stats</h2></div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-val blue" id="checksToday">0</div><div class="stat-lbl">Checks Today</div></div>
+      <div class="stat-box"><div class="stat-val red" id="highRiskCount">0</div><div class="stat-lbl">High Risk</div></div>
+      <div class="stat-box"><div class="stat-val green" id="safeCount">0</div><div class="stat-lbl">Low Risk</div></div>
+      <div class="stat-box"><div class="stat-val orange" id="avgScore">--</div><div class="stat-lbl">Avg Score</div></div>
+    </div>
+    <div class="uptime-row">
+      <span><i class="fa-solid fa-server"></i> Session Time</span>
+      <span class="uptime-val" id="uptime">00:00:00</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div id="dashToast" class="dash-toast hidden"></div>
+
+<!-- Logout confirm modal -->
+<div class="modal-overlay hidden" id="logoutModal">
+  <div class="modal-box">
+    <h3>Confirm Logout</h3>
+    <p>Are you sure you want to logout from RoadEye?</p>
+    <div class="modal-actions">
+      <button onclick="closeModal('logoutModal')" class="modal-btn cancel">Cancel</button>
+      <button onclick="window.location.href='/logout'" class="modal-btn confirm">Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- user data passed from Flask -->
+<script>
+  localStorage.setItem("re_userName", "{{ user_name }}");
+  localStorage.setItem("re_userEmail", "{{ user_email }}");
+</script>
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>
