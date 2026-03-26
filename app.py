@@ -117,35 +117,47 @@ def login():
 # ── ML PREDICTION API ─────────────────────────────────────────
 @app.route("/predict", methods=["POST"])
 def predict():
-    if model is None:
-        return jsonify({"error": "ML model not loaded"}), 503
-
     try:
-        road_type  = int(request.form["road_type"])
-        weather    = int(request.form["weather"])
-        blackspot  = int(request.form["blackspot"])
+        data = request.get_json()
 
-        features = pd.DataFrame([{
-            "road_type":         road_type,
-            "weather_condition": weather,
-            "blackspot_flag":    blackspot
-        }])
-
-        prediction = model.predict(features)
-        risk = int(prediction[0])
+        if model is not None:
+            features = pd.DataFrame([{
+                "start_latitude":          float(data.get("start_latitude", 26.9124)),
+                "start_longitude":         float(data.get("start_longitude", 75.7873)),
+                "end_latitude":            float(data.get("end_latitude", 26.915)),
+                "end_longitude":           float(data.get("end_longitude", 75.793)),
+                "road_type":               int(data.get("road_type", 1)),
+                "speed_limit_est(inKm/h)": int(data.get("speed_limit", 60)),
+                "blackspot_flag":          int(data.get("blackspot_flag", 0)),
+                "road_surface":            int(data.get("road_surface", 0)),
+                "season":                  int(data.get("season", 1)),
+                "time_of_day":             int(data.get("time_of_day", 2)),
+                "weather_type":            int(data.get("weather_type", 0)),
+                "traffic_density":         int(data.get("traffic_density", 1))
+            }])
+            prediction = model.predict(features)
+            risk = int(prediction[0])
+            ml_used = True
+        else:
+            # Rule-based fallback if model not loaded
+            wt  = int(data.get("weather_type", 0))
+            bs  = int(data.get("blackspot_flag", 0))
+            tod = int(data.get("time_of_day", 2))
+            score = wt * 15 + bs * 25 + (15 if tod == 0 else 0)
+            risk = 2 if score >= 50 else (1 if score >= 20 else 0)
+            ml_used = False
 
         if risk == 2:
-            alert = "High Risk — Immediate Attention Required"
+            alert = "High Risk — Drive with extreme caution. Reduce speed immediately."
         elif risk == 1:
-            alert = "Moderate Risk — Monitor Area"
+            alert = "Medium Risk — Conditions not ideal. Stay focused and drive carefully."
         else:
-            alert = "Low Risk — Safe to Drive"
+            alert = "Low Risk — Conditions are relatively safe. Stay alert."
 
-        return jsonify({"risk": risk, "alert": alert})
+        return jsonify({"risk": risk, "alert": alert, "ml_used": ml_used})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
 
 # ── MAIN ──────────────────────────────────────────────────────
 if __name__ == "__main__":
