@@ -367,7 +367,104 @@ function updateLiveStats() {
     document.getElementById("avgScore").textContent = avg;
   }
 }
+// ── ROUTE RISK ─────────────────────────────────────────────
+const routeData = {
+  "NH48_01": { name:"NH-48 Aspura",        lat:27.454846, lon:76.030283, end_lat:27.456285, end_lon:76.033271, blackspot:1, road_type:0, speed_limit:90 },
+  "NH48_02": { name:"Civil Lines",          lat:26.904344, lon:75.793283, end_lat:26.908846, end_lon:75.779521, blackspot:0, road_type:0, speed_limit:90 },
+  "NH48_06": { name:"NH-48 Mahapura",      lat:26.879585, lon:75.715027, end_lat:26.8642,   end_lon:75.6845,   blackspot:1, road_type:0, speed_limit:90 },
+  "GB_01":   { name:"Gopalpura-Tonk Road", lat:26.856000, lon:75.820000, end_lat:26.868000, end_lon:75.810000, blackspot:0, road_type:1, speed_limit:50 },
+  "GB_05":   { name:"Gopalpura-Heerapura", lat:26.892000, lon:75.744000, end_lat:26.893500, end_lon:75.748500, blackspot:1, road_type:1, speed_limit:50 },
+  "AR_01":   { name:"Agra Rd-Transport Ngr",lat:26.905500,lon:75.845500, end_lat:26.910000, end_lon:75.860000, blackspot:1, road_type:2, speed_limit:70 },
+  "AR_05":   { name:"Agra Rd-Kanota",      lat:26.861000, lon:75.955000, end_lat:26.855000, end_lon:76.010000, blackspot:1, road_type:2, speed_limit:70 },
+  "JLN_01":  { name:"JLN-Ajmeri Gate",     lat:26.921500, lon:75.831500, end_lat:26.912000, end_lon:75.820000, blackspot:0, road_type:1, speed_limit:50 },
+  "JLN_05":  { name:"JLN-Airport Road",    lat:26.847000, lon:75.786000, end_lat:26.829000, end_lon:75.805000, blackspot:0, road_type:1, speed_limit:60 },
+  "DR_01":   { name:"Delhi Rd-Badi Chopad",lat:26.924500, lon:75.827000, end_lat:26.938000, end_lon:75.834000, blackspot:0, road_type:1, speed_limit:40 },
+  "DR_05":   { name:"Delhi Rd-Chandwaji",  lat:27.056000, lon:75.915000, end_lat:27.078000, end_lon:75.932000, blackspot:0, road_type:0, speed_limit:80 },
+  "AJR_01":  { name:"Ajmer Rd-22 Godam",  lat:26.924500, lon:75.818000, end_lat:26.916000, end_lon:75.805000, blackspot:0, road_type:1, speed_limit:40 },
+  "AJR_05":  { name:"Ajmer Rd-200Ft Byps",lat:26.893500, lon:75.748500, end_lat:26.890207, end_lon:75.738546, blackspot:1, road_type:0, speed_limit:80 },
+  "TR_01":   { name:"Tonk Rd-Ajmeri Gate",lat:26.921500, lon:75.831500, end_lat:26.912000, end_lon:75.820000, blackspot:0, road_type:1, speed_limit:40 },
+  "TR_05":   { name:"Tonk Rd-Chokhi Dhani",lat:26.774000,lon:75.828000, end_lat:26.750000, end_lon:75.825000, blackspot:0, road_type:2, speed_limit:70 },
+};
 
+function checkRouteRisk() {
+  const fromId = document.getElementById("routeFrom").value;
+  const toId   = document.getElementById("routeTo").value;
+
+  if (!fromId || !toId) {
+    showToast("⚠️ Please select both start and end points");
+    return;
+  }
+
+  if (fromId === toId) {
+    showToast("⚠️ Start and end cannot be same");
+    return;
+  }
+
+  const from = routeData[fromId];
+  const to   = routeData[toId];
+  const tod  = getTimeOfDay();
+  const wc   = currentWeatherCode !== null
+    ? weatherToCondition(currentWeatherCode, currentWindspeed || 0)
+    : 0;
+
+  // Check both segments and take worst risk
+  Promise.all([
+    fetch("/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        start_latitude: from.lat, start_longitude: from.lon,
+        end_latitude: from.end_lat, end_longitude: from.end_lon,
+        road_type: from.road_type, speed_limit: from.speed_limit,
+        blackspot_flag: from.blackspot, time_of_day: tod,
+        weather_condition: wc
+      })
+    }).then(r => r.json()),
+
+    fetch("/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        start_latitude: to.lat, start_longitude: to.lon,
+        end_latitude: to.end_lat, end_longitude: to.end_lon,
+        road_type: to.road_type, speed_limit: to.speed_limit,
+        blackspot_flag: to.blackspot, time_of_day: tod,
+        weather_condition: wc
+      })
+    }).then(r => r.json())
+  ])
+  .then(function(results) {
+    const maxRisk = Math.max(results[0].risk, results[1].risk);
+    const icons   = { 2:"🚨", 1:"⚡", 0:"✅" };
+    const labels  = { 2:"HIGH RISK", 1:"MEDIUM RISK", 0:"LOW RISK" };
+    const colors  = { 2:"#fee2e2", 1:"#fef3c7", 0:"#dcfce7" };
+    const borders = { 2:"#fca5a5", 1:"#fcd34d", 0:"#86efac" };
+
+    const el = document.getElementById("routeResult");
+    el.classList.remove("hidden");
+    el.style.background  = colors[maxRisk];
+    el.style.border      = "2px solid " + borders[maxRisk];
+    el.style.borderRadius = "10px";
+    el.style.padding     = "14px";
+    el.style.marginTop   = "10px";
+    el.innerHTML =
+      "<div style='font-size:20px;font-weight:900;margin-bottom:6px;'>" +
+        icons[maxRisk] + " " + labels[maxRisk] +
+      "</div>" +
+      "<div style='font-size:13px;color:#374151;'>" +
+        "<b>From:</b> " + from.name + "<br>" +
+        "<b>To:</b> " + to.name + "<br>" +
+        "<b>Start Risk:</b> " + ["LOW","MEDIUM","HIGH"][results[0].risk] + " &nbsp;|&nbsp; " +
+        "<b>End Risk:</b> " + ["LOW","MEDIUM","HIGH"][results[1].risk] +
+      "</div>";
+
+    speak("Route risk is " + labels[maxRisk] + ". Drive accordingly.");
+    if (maxRisk === 2) sendNotification("🚨 Route HIGH RISK", "Your selected route has high risk segments!");
+  })
+  .catch(function() {
+    showToast("⚠️ Could not check route risk.");
+  });
+}
 // ── HISTORY TABLE ─────────────────────────────────────────────
 function addHistory(level, score) {
   const body = document.getElementById("historyBody");
