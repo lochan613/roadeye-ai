@@ -25,12 +25,13 @@ class User(db.Model):
         return f"<User {self.id} - {self.email}>"
 
 
-# ── Load ML model (optional – only if file exists) ──
+# ── Load ML model ─────────────────────────────────────────────
 model = None
 try:
     model = joblib.load("Model/model.pkl")
-except Exception:
-    pass  # Model not required for MVP
+    print("✅ ML model loaded —", model.n_features_in_, "features")
+except Exception as e:
+    print(f"⚠️  Model not loaded: {e}")
 
 
 # ── ROUTES ────────────────────────────────────────────────────
@@ -115,36 +116,44 @@ def login():
 
 
 # ── ML PREDICTION API ─────────────────────────────────────────
+# Features: start_lat, start_lon, end_lat, end_lon,
+#           road_type, speed_limit, blackspot_flag,
+#           road_surface, season, time_of_day,
+#           weather_type, traffic_density
+
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
         data = request.get_json()
 
         if model is not None:
+            # Use ML model with all 12 features
             features = pd.DataFrame([{
-                "start_latitude":          float(data.get("start_latitude", 26.9124)),
+                "start_latitude":          float(data.get("start_latitude",  26.9124)),
                 "start_longitude":         float(data.get("start_longitude", 75.7873)),
-                "end_latitude":            float(data.get("end_latitude", 26.915)),
-                "end_longitude":           float(data.get("end_longitude", 75.793)),
-                "road_type":               int(data.get("road_type", 1)),
-                "speed_limit_est(inKm/h)": int(data.get("speed_limit", 60)),
-                "blackspot_flag":          int(data.get("blackspot_flag", 0)),
-                "road_surface":            int(data.get("road_surface", 0)),
-                "season":                  int(data.get("season", 1)),
-                "time_of_day":             int(data.get("time_of_day", 2)),
-                "weather_type":            int(data.get("weather_type", 0)),
-                "traffic_density":         int(data.get("traffic_density", 1))
+                "end_latitude":            float(data.get("end_latitude",    26.9150)),
+                "end_longitude":           float(data.get("end_longitude",   75.7930)),
+                "road_type":               int(data.get("road_type",         1)),
+                "speed_limit_est(inKm/h)": int(data.get("speed_limit",       60)),
+                "blackspot_flag":          int(data.get("blackspot_flag",     0)),
+                "road_surface":            int(data.get("road_surface",       0)),
+                "season":                  int(data.get("season",             1)),
+                "time_of_day":             int(data.get("time_of_day",        2)),
+                "weather_type":            int(data.get("weather_type",       0)),
+                "traffic_density":         int(data.get("traffic_density",    1))
             }])
             prediction = model.predict(features)
-            risk = int(prediction[0])
+            risk    = int(prediction[0])
             ml_used = True
+
         else:
             # Rule-based fallback if model not loaded
-            wt  = int(data.get("weather_type", 0))
-            bs  = int(data.get("blackspot_flag", 0))
-            tod = int(data.get("time_of_day", 2))
-            score = wt * 15 + bs * 25 + (15 if tod == 0 else 0)
-            risk = 2 if score >= 50 else (1 if score >= 20 else 0)
+            wt  = int(data.get("weather_type",   0))
+            bs  = int(data.get("blackspot_flag",  0))
+            tod = int(data.get("time_of_day",     2))
+            rs  = int(data.get("road_surface",    0))
+            score = wt * 15 + bs * 25 + (15 if tod == 0 else 5 if tod == 1 else 0) + rs * 8
+            risk    = 2 if score >= 50 else (1 if score >= 20 else 0)
             ml_used = False
 
         if risk == 2:
@@ -159,8 +168,10 @@ def predict():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+
 # ── MAIN ──────────────────────────────────────────────────────
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        print("✅ Database ready")
     app.run(debug=True)
