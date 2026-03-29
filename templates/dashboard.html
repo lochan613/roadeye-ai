@@ -98,7 +98,40 @@
     </div>
   </div>
 
- 
+ <!-- Route Risk Card -->
+<div class="card" id="routeCard">
+  <div class="card-head">
+    <i class="fa-solid fa-route card-icon blue"></i>
+    <h2>Route Risk Check</h2>
+  </div>
+  <div class="route-form">
+    <select id="routeFrom" class="route-select">
+      <option value="">-- Select Start Point --</option>
+      <option value="NH48_01">NH-48 Aspura Stretch</option>
+      <option value="NH48_02">Civil Lines</option>
+      <option value="GB_01">Gopalpura Bypass - Tonk Road</option>
+      <option value="AR_01">Agra Road - Transport Nagar</option>
+      <option value="JLN_01">JLN Marg - Ajmeri Gate</option>
+      <option value="DR_01">Delhi Road - Badi Chopad</option>
+      <option value="AJR_01">Ajmer Road - 22 Godam</option>
+      <option value="TR_01">Tonk Road - Ajmeri Gate</option>
+    </select>
+    <select id="routeTo" class="route-select">
+      <option value="">-- Select End Point --</option>
+      <option value="NH48_06">NH-48 Mahapura</option>
+      <option value="GB_05">Gopalpura - Heerapura</option>
+      <option value="AR_05">Agra Road - Kanota</option>
+      <option value="JLN_05">JLN Marg - Airport Road</option>
+      <option value="DR_05">Delhi Road - Chandwaji</option>
+      <option value="AJR_05">Ajmer Road - 200 Ft Bypass</option>
+      <option value="TR_05">Tonk Road - Chokhi Dhani</option>
+    </select>
+    <button onclick="checkRouteRisk()" class="predict-btn">
+      <i class="fa-solid fa-route"></i> Check Route Risk
+    </button>
+  </div>
+  <div id="routeResult" class="route-result hidden"></div>
+</div>
 
   <!-- Card 6: Quick Actions -->
   <div class="card" id="actionsCard">
