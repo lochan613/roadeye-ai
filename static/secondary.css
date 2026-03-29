@@ -147,7 +147,69 @@ tbody tr:hover { background:rgba(255,255,255,0.03); }
 .tip-num { font-size:22px; font-weight:900; color:rgba(143,179,255,0.2); min-width:28px; line-height:1; }
 .tip-body strong { display:block; font-size:13px; margin-bottom:4px; color:white; }
 .tip-body span   { font-size:12px; color:#475d7a; line-height:1.6; }
+.morth-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+.morth-tile {
+  border-radius: 10px;
+  padding: 16px 10px;
+  text-align: center;
+}
+.morth-tile.red    { background: rgba(231,76,60,0.12);  border: 1px solid rgba(231,76,60,0.3); }
+.morth-tile.orange { background: rgba(243,156,18,0.12); border: 1px solid rgba(243,156,18,0.3); }
+.morth-tile.yellow { background: rgba(202,138,4,0.12);  border: 1px solid rgba(202,138,4,0.3); }
+.morth-tile.blue   { background: rgba(37,99,235,0.12);  border: 1px solid rgba(37,99,235,0.3); }
+.morth-tile.purple { background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3); }
+.morth-tile.green  { background: rgba(22,163,74,0.12);  border: 1px solid rgba(22,163,74,0.3); }
+.morth-num   { font-size: 22px; font-weight: 900; color: white; margin-bottom: 4px; }
+.morth-label { font-size: 11px; color: rgba(255,255,255,0.7); }
+```
 
+---
+
+### 👤 Member 3 — Backend + Deployment
+**Days 1-7**
+
+**Day 1-2: Firebase Setup**
+
+1. firebase.google.com → New Project → "RoadEye"
+2. Firestore Database → Create → Start in test mode
+3. Authentication → Enable Email/Password
+
+**Day 3-4: Replace SQLite with Firebase**
+
+Ye ek alag session mein karenge — bahut steps hain. Abhi ke liye SQLite rakhte hain, Firebase baad mein add karenge.
+
+**Day 5-7: Render Deployment**
+
+Project folder mein ye files banao:
+
+**`requirements.txt`:**
+```
+flask==3.0.0
+flask-sqlalchemy==3.1.1
+joblib==1.3.2
+pandas==2.1.4
+scikit-learn==1.6.1
+gunicorn==21.2.0
+numpy==1.26.2
+```
+
+**`Procfile`** (no extension):
+```
+web: gunicorn app:app
+```
+
+**`.gitignore`:**
+```
+__pycache__/
+*.pyc
+*.db
+.env
+venv/
 /* ── BACK BUTTON ── */
 .back-btn {
     background:#538dc8; color:white; border:none;
