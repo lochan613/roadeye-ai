@@ -1,0 +1,28 @@
+{
+  "name": "RoadEye — AI Driver Safety",
+  "short_name": "RoadEye",
+  "description": "AI-powered road safety monitoring with real-time risk alerts.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0a1325",
+  "theme_color": "#538dc8",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1995/1995574.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1995/1995574.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["navigation", "utilities", "travel"],
+  "lang": "en",
+  "dir": "ltr"
+}
