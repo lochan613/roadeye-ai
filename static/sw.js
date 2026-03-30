@@ -1,109 +1,82 @@
-// ── RoadEye Service Worker ─────────────────────────────────────
-// Handles background push notifications + PWA caching
+// ── sw.js — RoadEye Service Worker (Firebase FCM + Cache) ─────
 
-const CACHE_NAME = "roadeye-v1";
-const ASSETS = [
-    "/",
-    "/dashboard",
-    "/static/dashboard.css",
-    "/static/dashboard.js",
-    "/static/landing.css",
-    "/static/login.css",
-    "/static/signup.css",
-    "/static/secondary.css"
-];
+importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js");
 
-// ── INSTALL: Cache core assets ────────────────────────────────
-self.addEventListener("install", function(event) {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then(function(cache) {
-            return cache.addAll(ASSETS).catch(function() {
-                // Silently fail — some assets may not exist yet
-            });
-        })
-    );
-    self.skipWaiting();
+firebase.initializeApp({
+  apiKey: "AIzaSyAUTZjcZxtSSS_Tdx0UOVKOkO-csclVroM",
+  authDomain: "roadeye-e9100.firebaseapp.com",
+  projectId: "roadeye-e9100",
+  storageBucket: "roadeye-e9100.firebasestorage.app",
+  messagingSenderId: "75325604847",
+  appId: "1:75325604847:web:468cc8ffe46a82a7812c1a"
 });
 
-// ── ACTIVATE: Clean old caches ────────────────────────────────
-self.addEventListener("activate", function(event) {
-    event.waitUntil(
-        caches.keys().then(function(keys) {
-            return Promise.all(
-                keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-            );
-        })
-    );
-    self.clients.claim();
+const messaging = firebase.messaging();
+
+const CACHE = "roadeye-v2";
+const ASSETS = ["/", "/dashboard", "/static/css/dashboard.css",
+  "/static/js/dashboard.js", "/static/css/secondary.css"];
+
+// ── Install ───────────────────────────────────────────────────
+self.addEventListener("install", function(e) {
+  e.waitUntil(
+    caches.open(CACHE).then(function(c) {
+      return c.addAll(ASSETS).catch(function() {});
+    })
+  );
+  self.skipWaiting();
 });
 
-// ── FETCH: Network-first strategy ────────────────────────────
-self.addEventListener("fetch", function(event) {
-    // Only cache GET requests
-    if (event.request.method !== "GET") return;
-
-    event.respondWith(
-        fetch(event.request)
-            .then(function(response) {
-                // Cache successful responses
-                if (response && response.status === 200) {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-                }
-                return response;
-            })
-            .catch(function() {
-                // Fallback to cache when offline
-                return caches.match(event.request);
-            })
-    );
+// ── Activate ──────────────────────────────────────────────────
+self.addEventListener("activate", function(e) {
+  e.waitUntil(
+    caches.keys().then(function(keys) {
+      return Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+    })
+  );
+  self.clients.claim();
 });
 
-// ── PUSH: Receive background push notifications ───────────────
-self.addEventListener("push", function(event) {
-    let data = { title: "RoadEye Alert", body: "Check your road safety status.", icon: "/static/icon-192.png" };
-
-    if (event.data) {
-        try { data = event.data.json(); } catch(e) { data.body = event.data.text(); }
-    }
-
-    const options = {
-        body:    data.body,
-        icon:    data.icon    || "/static/icon-192.png",
-        badge:   data.badge   || "/static/icon-192.png",
-        tag:     data.tag     || "roadeye-alert",
-        renotify: true,
-        vibrate: data.vibrate || [300, 150, 300, 150, 300],
-        data:    { url: data.url || "/dashboard" },
-        actions: [
-            { action: "view",    title: "View Dashboard" },
-            { action: "dismiss", title: "Dismiss" }
-        ]
-    };
-
-    event.waitUntil(
-        self.registration.showNotification(data.title, options)
-    );
+// ── Fetch ─────────────────────────────────────────────────────
+self.addEventListener("fetch", function(e) {
+  if (e.request.method !== "GET") return;
+  e.respondWith(
+    fetch(e.request)
+      .then(function(res) {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      })
+      .catch(function() { return caches.match(e.request); })
+  );
 });
 
-// ── NOTIFICATION CLICK: Open dashboard ───────────────────────
-self.addEventListener("notificationclick", function(event) {
-    event.notification.close();
+// ── Background FCM notifications ──────────────────────────────
+messaging.onBackgroundMessage(function(payload) {
+  const { title, body } = payload.notification || {};
+  self.registration.showNotification(title || "RoadEye Alert", {
+    body:    body || "Check your road safety status.",
+    icon:    "https://cdn-icons-png.flaticon.com/512/1995/1995574.png",
+    badge:   "https://cdn-icons-png.flaticon.com/512/1995/1995574.png",
+    tag:     "roadeye-bg",
+    renotify: true,
+    vibrate: [300, 150, 300],
+    data:    { url: "/dashboard" }
+  });
+});
 
-    if (event.action === "dismiss") return;
-
-    const url = event.notification.data && event.notification.data.url
-        ? event.notification.data.url
-        : "/dashboard";
-
-    event.waitUntil(
-        clients.matchAll({ type: "window", includeUncontrolled: true }).then(function(clientList) {
-            for (let client of clientList) {
-                if (client.url.includes("/dashboard") && "focus" in client) {
-                    return client.focus();
-                }
-            }
-            if (clients.openWindow) return clients.openWindow(url);
-        })
-    );
+// ── Notification click ────────────────────────────────────────
+self.addEventListener("notificationclick", function(e) {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: "window" }).then(function(list) {
+      for (const c of list) {
+        if (c.url.includes("/dashboard") && "focus" in c) return c.focus();
+      }
+      if (clients.openWindow) return clients.openWindow("/dashboard");
+    })
+  );
 });
