@@ -3,266 +3,171 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RoadEye | Safety Insights</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='secondary.css') }}">
+<title>RoadEye — Safety Insights</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/secondary.css') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-<!-- HEADER -->
-<header class="header">
-  <div class="header-left">
-    <div class="logo">RoadEye</div>
-    <div class="header-divider"></div>
-    <div class="title">Road Safety Insights</div>
-  </div>F
-  <div class="header-right">
-    <a href="/dashboard" class="back-btn">
-      <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-    </a>
-  </div>
+<header class="sec-header">
+  <div class="sec-logo"><i class="fa-solid fa-eye"></i> RoadEye</div>
+  <nav class="sec-nav">
+    <a href="/dashboard"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+    <a href="/secondary" class="active"><i class="fa-solid fa-chart-bar"></i> Insights</a>
+  </nav>
+  <a href="/logout" class="sec-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
 </header>
 
-<!-- PAGE INTRO BANNER -->
-<div class="page-banner">
-  <div class="banner-inner">
-    <div class="banner-text">
-      <h1>Safety Intelligence Center</h1>
-      <p>Real-time environmental data, blackspot analysis, and risk history — all in one place.</p>
-    </div>
-    <div class="banner-badges">
-      <span class="badge"><i class="fa-solid fa-satellite-dish"></i> Live GPS</span>
-      <span class="badge"><i class="fa-solid fa-cloud-sun"></i> Live Weather</span>
-      <span class="badge"><i class="fa-solid fa-shield-halved"></i> AI Powered</span>
-    </div>
-  </div>
-</div>
+<div class="sec-container">
 
-<!-- TOP METRIC STRIP -->
-<div class="metric-strip" id="metricStrip">
-  <!-- Injected by JS -->
-</div>
-
-<div class="container">
-
-  <!-- ROW 1: GPS + Weather side by side -->
-  <div class="row-2col">
-
-    <!-- GPS Card -->
-    <div class="card card-accent-blue" id="gpsCardWrap">
-      <div class="card-header">
-        <i class="fa-solid fa-location-dot card-icon blue"></i>
-        <h2>GPS Location</h2>
-        <span class="live-pill"><span class="live-dot"></span>Live</span>
-      </div>
-      <div class="coord-display" id="coordDisplay">
-        <div class="coord-box">
-          <div class="coord-label">Latitude</div>
-          <div class="coord-val" id="dispLat">—</div>
-        </div>
-        <div class="coord-divider"></div>
-        <div class="coord-box">
-          <div class="coord-label">Longitude</div>
-          <div class="coord-val" id="dispLon">—</div>
-        </div>
-      </div>
-      <div class="info-row">
-        <i class="fa-solid fa-map-pin" style="color:#538dc8"></i>
-        <span id="dispCity">Fetching city...</span>
-      </div>
-      <div class="source-tag">Source: Browser Geolocation API</div>
-    </div>
-
-    <!-- Weather Card -->
-    <div class="card card-accent-teal" id="weatherCardWrap">
-      <div class="card-header">
-        <i class="fa-solid fa-cloud-sun card-icon teal"></i>
-        <h2>Live Weather</h2>
-        <span class="live-pill"><span class="live-dot"></span>Live</span>
-      </div>
-      <div class="weather-grid" id="weatherGrid">
-        <div class="weather-tile">
-          <i class="fa-solid fa-temperature-half"></i>
-          <div class="weather-val" id="dispTemp">--</div>
-          <div class="weather-key">Temperature</div>
-        </div>
-        <div class="weather-tile">
-          <i class="fa-solid fa-droplet"></i>
-          <div class="weather-val" id="dispHumidity">--</div>
-          <div class="weather-key">Humidity</div>
-        </div>
-        <div class="weather-tile">
-          <i class="fa-solid fa-wind"></i>
-          <div class="weather-val" id="dispWind">--</div>
-          <div class="weather-key">Wind Speed</div>
-        </div>
-        <div class="weather-tile">
-          <i class="fa-solid fa-cloud"></i>
-          <div class="weather-val" id="dispWeather" style="font-size:13px;">--</div>
-          <div class="weather-key">Condition</div>
-        </div>
-      </div>
-      <div class="source-tag">Source: Open-Meteo API (no key required)</div>
-    </div>
-
+  <!-- Page Title -->
+  <div class="sec-title">
+    <h1>Safety Insights</h1>
+    <p>Your risk history and Rajasthan road safety data</p>
   </div>
 
-  <!-- ROW 2: Road Risk Summary -->
-  <div class="card">
-    <div class="card-header">
-      <i class="fa-solid fa-chart-bar card-icon blue"></i>
-      <h2>Road Risk Summary</h2>
-    </div>
-    <p class="card-desc">Historical and environmental factors affecting road safety on your current route.</p>
-    <div class="summary-grid">
-      <div class="summary-tile">
-        <div class="summary-icon" style="background:#fff0f0"><i class="fa-solid fa-car-burst" style="color:#e74c3c"></i></div>
-        <div class="summary-num" id="accidents" style="color:#e74c3c">--</div>
-        <div class="summary-label">Accident History (30 days)</div>
-      </div>
-      <div class="summary-tile">
-        <div class="summary-icon" style="background:#fff8e8"><i class="fa-solid fa-traffic-light" style="color:#f39c12"></i></div>
-        <div class="summary-num" id="traffic" style="color:#f39c12">--</div>
-        <div class="summary-label">Traffic Density</div>
-      </div>
-      <div class="summary-tile">
-        <div class="summary-icon" style="background:#eaf6ff"><i class="fa-solid fa-road" style="color:#3498db"></i></div>
-        <div class="summary-num" id="road" style="color:#3498db">--</div>
-        <div class="summary-label">Road Condition</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ROW 3: Blackspots + Risk History side by side -->
-  <div class="row-2col">
-
-    <!-- Blackspots -->
-    <div class="card">
-      <div class="card-header">
-        <i class="fa-solid fa-triangle-exclamation card-icon orange"></i>
-        <h2>Nearby Blackspots</h2>
-      </div>
-      <ul class="blackspot-list" id="blackspots"></ul>
-    </div>
+  <!-- Row 1: Risk History + MORTH Stats -->
+  <div class="sec-row2">
 
     <!-- Risk History -->
-    <div class="card">
-      <div class="card-header">
-        <i class="fa-solid fa-clock-rotate-left card-icon blue"></i>
-        <h2>Recent Risk Predictions</h2>
+    <div class="sec-card">
+      <div class="sec-card-title">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Recent Risk Predictions</span>
       </div>
       <div class="table-wrap">
-        <table>
+        <table class="risk-table">
           <thead>
             <tr>
               <th>Time</th>
               <th>Weather</th>
-              <th>Risk Level</th>
+              <th>Risk</th>
             </tr>
           </thead>
-          <tbody id="historyTable"></tbody>
+          <tbody id="historyBody">
+            <tr><td colspan="3" class="no-data">No predictions yet — go to Dashboard and click Check Risk</td></tr>
+          </tbody>
         </table>
       </div>
+      <p class="sec-hint">Risk predictions are saved when you use Check Risk on the dashboard.</p>
+    </div>
+
+    <!-- MORTH Stats -->
+    <div class="sec-card morth-card">
+      <div class="sec-card-title">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Rajasthan Road Safety</span>
+        <span class="sec-badge">MORTH 2022</span>
+      </div>
+      <p class="morth-desc">This is why RoadEye exists — Rajasthan is ranked 5th in India for road accidents. These are real government statistics.</p>
+      <div class="morth-grid">
+        <div class="morth-tile">
+          <div class="morth-num red">25,527</div>
+          <div class="morth-lbl">Total Accidents</div>
+        </div>
+        <div class="morth-tile">
+          <div class="morth-num orange">10,457</div>
+          <div class="morth-lbl">Fatalities</div>
+        </div>
+        <div class="morth-tile">
+          <div class="morth-num yellow">24,618</div>
+          <div class="morth-lbl">Injured</div>
+        </div>
+        <div class="morth-tile">
+          <div class="morth-num blue">32%</div>
+          <div class="morth-lbl">On National Highways</div>
+        </div>
+        <div class="morth-tile">
+          <div class="morth-num purple">40%</div>
+          <div class="morth-lbl">At Night</div>
+        </div>
+        <div class="morth-tile">
+          <div class="morth-num green">#5</div>
+          <div class="morth-lbl">India Rank</div>
+        </div>
+      </div>
+      <p class="morth-source">Source: Road Accidents in India 2022 — Ministry of Road Transport & Highways</p>
     </div>
 
   </div>
 
-  <!-- ROW 4: Safety Tips — full width -->
-  <div class="card tips-card">
-    <div class="card-header">
-      <i class="fa-solid fa-lightbulb card-icon teal"></i>
-      <h2>Safety Tips</h2>
+  <!-- Row 2: Known Risk Zones -->
+  <div class="sec-card">
+    <div class="sec-card-title">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>Known Risk Zones — Jaipur</span>
+      <span class="sec-badge warning">17 Blackspots</span>
+    </div>
+    <p class="sec-card-desc">These road segments are marked as accident-prone in our dataset. RoadEye uses this data to improve risk prediction accuracy.</p>
+    <div class="zones-grid" id="zonesGrid"></div>
+  </div>
+
+  <!-- Row 3: Safety Tips — 6 only -->
+  <div class="sec-card">
+    <div class="sec-card-title">
+      <i class="fa-solid fa-lightbulb"></i>
+      <span>Essential Safety Tips</span>
     </div>
     <div class="tips-grid">
-      <div class="tip-item">
-        <div class="tip-num">01</div>
-        <div class="tip-text">
-          <strong>Safe Following Distance</strong>
-          <span>Maintain at least 3 seconds of gap from the vehicle ahead</span>
+      <div class="tip-card">
+        <div class="tip-icon"><i class="fa-solid fa-car"></i></div>
+        <div class="tip-body">
+          <strong>Following Distance</strong>
+          <span>Maintain 3 seconds gap from the vehicle ahead</span>
         </div>
       </div>
-      <div class="tip-item">
-        <div class="tip-num">02</div>
-        <div class="tip-text">
+      <div class="tip-card">
+        <div class="tip-icon"><i class="fa-solid fa-cloud-rain"></i></div>
+        <div class="tip-body">
           <strong>Wet Roads</strong>
-          <span>Avoid sudden braking — brake gently and early on wet surfaces</span>
+          <span>Brake gently and early — avoid sudden stops</span>
         </div>
       </div>
-      <div class="tip-item">
-        <div class="tip-num">03</div>
-        <div class="tip-text">
+      <div class="tip-card">
+        <div class="tip-icon"><i class="fa-solid fa-smog"></i></div>
+        <div class="tip-body">
           <strong>Fog & Rain</strong>
-          <span>Reduce speed by 30% and use headlights + fog lights</span>
+          <span>Reduce speed 30%, use headlights and fog lights</span>
         </div>
       </div>
-      <div class="tip-item">
-        <div class="tip-num">04</div>
-        <div class="tip-text">
-          <strong>Accident-Prone Zones</strong>
-          <span>Stay extra alert near blackspots — reduce speed preemptively</span>
-        </div>
-      </div>
-      <div class="tip-item">
-        <div class="tip-num">05</div>
-        <div class="tip-text">
+      <div class="tip-card">
+        <div class="tip-icon"><i class="fa-solid fa-moon"></i></div>
+        <div class="tip-body">
           <strong>Night Driving</strong>
-          <span>Use high beams on empty roads, switch to low beams when traffic is ahead</span>
+          <span>Use high beams on empty roads, switch to low in traffic</span>
         </div>
       </div>
-      <div class="tip-item">
-        <div class="tip-num">06</div>
-        <div class="tip-text">
+      <div class="tip-card">
+        <div class="tip-icon"><i class="fa-solid fa-bed"></i></div>
+        <div class="tip-body">
           <strong>Driver Fatigue</strong>
-          <span>Take a break every 2 hours — fatigue causes 20% of all road accidents</span>
+          <span>Take a break every 2 hours — fatigue causes 20% of accidents</span>
+        </div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon"><i class="fa-solid fa-wind"></i></div>
+        <div class="tip-body">
+          <strong>Dust Storms</strong>
+          <span>Stop safely off road, keep hazard lights on till storm passes</span>
         </div>
       </div>
     </div>
   </div>
 
-</div>
-<!-- MORTH Stats Card -->
-<div class="card">
-  <div class="card-header">
-    <i class="fa-solid fa-chart-line card-icon blue"></i>
-    <h2>Rajasthan Road Safety — MORTH 2022</h2>
+  <!-- Back -->
+  <div style="text-align:center;padding:10px 0 20px;">
+    <a href="/dashboard" class="back-btn">
+      <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    </a>
   </div>
-  <p class="card-desc">Official data from Ministry of Road Transport & Highways Annual Report 2022</p>
-  <div class="morth-grid">
-    <div class="morth-tile red">
-      <div class="morth-num">25,527</div>
-      <div class="morth-label">Total Accidents</div>
-    </div>
-    <div class="morth-tile orange">
-      <div class="morth-num">10,457</div>
-      <div class="morth-label">Fatalities</div>
-    </div>
-    <div class="morth-tile yellow">
-      <div class="morth-num">24,618</div>
-      <div class="morth-label">Injured</div>
-    </div>
-    <div class="morth-tile blue">
-      <div class="morth-num">32%</div>
-      <div class="morth-label">NH Accidents</div>
-    </div>
-    <div class="morth-tile purple">
-      <div class="morth-num">40%</div>
-      <div class="morth-label">Night Accidents</div>
-    </div>
-    <div class="morth-tile green">
-      <div class="morth-num">#5</div>
-      <div class="morth-label">Rank in India</div>
-    </div>
-  </div>
-  <p style="font-size:11px;color:#475d7a;margin-top:10px;">
-    Source: Road Accidents in India 2022, MORTH, Government of India
-  </p>
+
 </div>
-<!-- FOOTER -->
-<footer class="footer">
-  <span>© 2026 RoadEye — AI Predictive Road Safety System</span>
-  <span>Data: Open-Meteo · OpenStreetMap · Browser GPS</span>
+
+<footer class="sec-footer">
+  <span>© 2026 RoadEye — AI-Based Road Safety System</span>
+  <span>Data: Open-Meteo · OpenStreetMap · MORTH 2022</span>
 </footer>
 
-<script src="{{ url_for('static', filename='secondary.js') }}"></script>
+<script src="{{ url_for('static', filename='js/secondary.js') }}"></script>
 </body>
 </html>
