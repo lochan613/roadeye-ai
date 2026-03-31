@@ -56,7 +56,11 @@ if (loginForm) {
     }
 
     if (!valid) { e.preventDefault(); return; }
-
+    const phone = document.getElementById("phone") ? document.getElementById("phone").value.trim() : "";
+    if (phone && !/^[0-9]{10}$/.test(phone)) {
+      showError("phoneErr", "Phone must be 10 digits");
+      valid = false;
+}
     // Let form submit normally to Flask
   });
 }
