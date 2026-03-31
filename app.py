@@ -6,6 +6,7 @@ import joblib
 import pandas as pd
 import os
 import re
+import secrets
 
 app = Flask(__name__)
 
@@ -19,7 +20,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Secret key/config from environment (do not hardcode in production)
 app.secret_key = os.environ.get('SECRET_KEY', 'roadeye_secret_2026_xk9')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production (HTTPS)
+app.config['SESSION_COOKIE_SECURE'] = True  # Set True for production (HTTPS)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Optional: configure permanent session lifetime and secure defaults.
@@ -43,6 +44,33 @@ def is_valid_email(email: str) -> bool:
 
 def is_valid_phone(phone: str) -> bool:
     return phone.isdigit() and len(phone) == 10
+
+
+def generate_csrf_token():
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(32)
+    return session['csrf_token']
+
+
+def validate_csrf_token(token):
+    return token and token == session.get('csrf_token')
+
+
+# Simple rate limiting for login attempts
+def check_rate_limit():
+    attempts = session.get('login_attempts', 0)
+    last_attempt = session.get('last_attempt', 0)
+    now = datetime.now().timestamp()
+    if now - last_attempt > 300:  # Reset after 5 minutes
+        session['login_attempts'] = 0
+    if attempts >= 5:
+        return False
+    return True
+
+
+def increment_attempts():
+    session['login_attempts'] = session.get('login_attempts', 0) + 1
+    session['last_attempt'] = datetime.now().timestamp()
 
 
 model = None
@@ -86,6 +114,10 @@ def signup():
     if "user_id" in session:
         return redirect("/dashboard")
     if request.method == "POST":
+        csrf_token = request.form.get('csrf_token')
+        if not validate_csrf_token(csrf_token):
+            return render_template("signup.html", error="Invalid request.")
+
         name     = request.form.get("name", "").strip()
         email    = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
@@ -115,31 +147,44 @@ def signup():
         session.permanent      = False
         return redirect("/dashboard")
 
-    return render_template("signup.html")
+    return render_template("signup.html", csrf_token=generate_csrf_token())
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if "user_id" in session:
         return redirect("/dashboard")
     if request.method == "POST":
+        if not check_rate_limit():
+            return render_template("login.html", error="Too many failed attempts. Try again later.", csrf_token=generate_csrf_token())
+
+        csrf_token = request.form.get('csrf_token')
+        if not validate_csrf_token(csrf_token):
+            increment_attempts()
+            return render_template("login.html", error="Invalid request.", csrf_token=generate_csrf_token())
+
         email    = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         if not email or not password:
-            return render_template("login.html", error="Please enter both email and password.")
+            increment_attempts()
+            return render_template("login.html", error="Please enter both email and password.", csrf_token=generate_csrf_token())
         if not is_valid_email(email):
-            return render_template("login.html", error="Invalid email format.")
+            increment_attempts()
+            return render_template("login.html", error="Invalid email format.", csrf_token=generate_csrf_token())
 
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
+            session.pop('login_attempts', None)
+            session.pop('last_attempt', None)
             session["user_id"]    = user.id
             session["user_name"]  = user.name
             session["user_email"] = user.email
             session.permanent      = False
             return redirect("/dashboard")
 
-        return render_template("login.html", error="Invalid email or password.")
+        increment_attempts()
+        return render_template("login.html", error="Invalid email or password.", csrf_token=generate_csrf_token())
 
-    return render_template("login.html")
+    return render_template("login.html", csrf_token=generate_csrf_token())
 
 @app.route("/predict", methods=["POST"])
 def predict():

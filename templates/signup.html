@@ -47,6 +47,7 @@
       <p class="auth-sub">Join RoadEye to start driving safely</p>
 
       <form id="signupForm" action="/signup" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
         <div class="input-group">
           <i class="fa-regular fa-user"></i>

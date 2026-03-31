@@ -1,287 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RoadEye – Dashboard</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!-- Firebase CDN -->
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoadEye - Driver Safety Monitor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/dist/umd/lucide.js">
 </head>
 <body>
 
-<!-- ── HEADER ── -->
-<header class="header">
-  <div class="header-left">
-    <div class="logo">
-      <i class="fa-solid fa-eye"></i>
-      <span>RoadEye</span>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-icon">👁️</span>
+        <span class="logo-text">RoadEye</span>
+      </div>
+      <span class="header-subtitle">Driver Safety Monitor</span>
     </div>
-    <span class="header-sub">Driver Safety Monitor</span>
+
+    <div class="header-right">
+      <!-- Driving Toggle -->
+      <div class="driving-toggle">
+        <span class="toggle-label">Not Driving</span>
+        <div class="toggle-switch">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+
+      <!-- Insights Button -->
+      <a href="/safety-insights" class="btn-insights">
+        <span class="icon">📊</span>
+        Insights
+      </a>
+
+      <!-- Account Dropdown -->
+      <div class="account-dropdown">
+        <div class="account-button">
+          <div class="avatar">A</div>
+          <div class="account-info">
+            <span class="account-name">Driver</span>
+            <span class="account-email">My Account</span>
+          </div>
+          <span class="chevron">▼</span>
+        </div>
+
+        <div class="dropdown-menu">
+          <div class="menu-header">
+            <div class="avatar-large">A</div>
+            <div>
+              <div class="menu-user-name">Driver</div>
+              <div class="menu-user-email">driver@roadeye.app</div>
+            </div>
+          </div>
+          <div class="menu-divider"></div>
+          <a href="/safety-insights" class="menu-item">
+            <span class="icon">📊</span>
+            Safety Insights
+          </a>
+          <button class="menu-item" id="theme-toggle">
+            <span class="icon">🌙</span>
+            <span class="theme-text">Dark Mode</span>
+          </button>
+          <button class="menu-item" id="voice-toggle">
+            <span class="icon">🔊</span>
+            <span class="voice-text">Voice On</span>
+          </button>
+          <div class="menu-divider"></div>
+          <a href="/" class="menu-item logout">
+            <span class="icon">🚪</span>
+            Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- DRIVING BANNER -->
+  <div class="banner banner-driving" style="display: none;">
+    <span class="icon">🚗</span>
+    <span>Driving Mode Active — Risk monitoring enabled</span>
+    <div class="pulse-dot"></div>
   </div>
 
-  <div class="header-right">
-    <!-- Driving Toggle -->
-    <div class="drive-toggle" id="driveToggleWrap">
-      <span class="drive-label" id="driveLabel">Not Driving</span>
-      <div class="toggle-switch" id="driveToggle" onclick="toggleDriving()">
-        <div class="toggle-knob"></div>
-      </div>
-    </div>
+  <!-- IDLE NOTICE -->
+  <div class="banner banner-idle">
+    <span class="icon">ℹ️</span>
+    <span>Toggle <strong>"Driving"</strong> in the header to enable risk prediction</span>
+  </div>
 
-    <!-- Safety Insights -->
-    <a href="/secondary" class="header-btn">
-      <i class="fa-solid fa-chart-bar"></i>
-      <span>Insights</span>
-    </a>
+  <!-- MAIN GRID -->
+  <div class="dashboard-grid">
 
-    <!-- Account Dropdown -->
-    <div class="account-menu" id="accountMenu">
-      <div class="account-trigger" onclick="toggleAccountMenu()">
-        <div class="account-avatar" id="accountAvatar">L</div>
-        <div class="account-info">
-          <span class="account-name" id="accountName">Driver</span>
-          <span class="account-role">My Account</span>
+    <!-- CARD 1: CURRENT ENVIRONMENT -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon">🛰️</span>
+        <span>Current Environment</span>
+        <div class="live-badge">
+          <span class="live-dot"></span>
+          Live
         </div>
-        <i class="fa-solid fa-chevron-down account-chevron" id="accountChevron"></i>
       </div>
-      <div class="account-dropdown" id="accountDropdown">
-        <div class="dropdown-header">
-          <div class="dropdown-avatar" id="dropAvatar">L</div>
+
+      <div class="environment-grid">
+        <div class="env-item">
+          <div class="env-icon" style="background: #dbeafe;">📍</div>
           <div>
-            <div class="dropdown-name" id="dropName">Driver</div>
-            <div class="dropdown-email" id="dropEmail">--</div>
+            <div class="env-label">LOCATION</div>
+            <div class="env-value">26.91250, 75.78730</div>
           </div>
         </div>
-        <div class="dropdown-divider"></div>
-        <a href="/secondary" class="dropdown-item">
-          <i class="fa-solid fa-chart-bar"></i> Safety Insights
-        </a>
-        <div class="dropdown-item" onclick="toggleTheme()">
-          <i class="fa-solid fa-circle-half-stroke"></i>
-          <span id="themeLabel">Dark Mode</span>
+        <div class="env-item">
+          <div class="env-icon" style="background: #ede9fe;">🏢</div>
+          <div>
+            <div class="env-label">CITY</div>
+            <div class="env-value">Jaipur, Rajasthan</div>
+          </div>
         </div>
-        <div class="dropdown-item" onclick="toggleVoice()">
-          <i class="fa-solid fa-volume-high" id="voiceIcon"></i>
-          <span id="voiceLabel">Voice On</span>
+        <div class="env-item">
+          <div class="env-icon" style="background: #fee2e2;">🌡️</div>
+          <div>
+            <div class="env-label">TEMPERATURE</div>
+            <div class="env-value">32 °C</div>
+          </div>
         </div>
-        <div class="dropdown-divider"></div>
-        <a href="/logout" class="dropdown-item danger">
-          <i class="fa-solid fa-right-from-bracket"></i> Logout
-        </a>
+        <div class="env-item">
+          <div class="env-icon" style="background: #fef3c7;">☀️</div>
+          <div>
+            <div class="env-label">WEATHER</div>
+            <div class="env-value">Clear Sky ☀️</div>
+          </div>
+        </div>
+        <div class="env-item">
+          <div class="env-icon" style="background: #cffafe;">💧</div>
+          <div>
+            <div class="env-label">HUMIDITY</div>
+            <div class="env-value">45%</div>
+          </div>
+        </div>
+        <div class="env-item">
+          <div class="env-icon" style="background: #dcfce7;">💨</div>
+          <div>
+            <div class="env-label">WIND</div>
+            <div class="env-value">12 km/h</div>
+          </div>
+        </div>
+        <div class="env-item">
+          <div class="env-icon" style="background: #f0fdf4;">🕐</div>
+          <div>
+            <div class="env-label">TIME</div>
+            <div class="env-value" id="current-time">--:--:--</div>
+          </div>
+        </div>
+        <div class="env-item">
+          <div class="env-icon" style="background: #fef9c3;">⚠️</div>
+          <div>
+            <div class="env-label">NEAREST ZONE</div>
+            <div class="env-value">✅ Safe Zone</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        📍 GPS acquired (±35m) — Live weather loaded successfully
+      </div>
+    </div>
+
+    <!-- CARD 2: RISK PREDICTION -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon">🧠</span>
+        <span>Risk Prediction</span>
+      </div>
+
+      <div class="risk-box" id="risk-display">
+        <div class="risk-icon">🛡️</div>
+        <div class="risk-label">Waiting</div>
+        <div class="risk-sub">Toggle driving mode and click Check Risk</div>
+      </div>
+
+      <button class="btn-primary" id="check-risk-btn">
+        <span class="icon">📊</span>
+        Check Risk
+      </button>
+
+      <div class="demo-buttons">
+        <span class="demo-label">Demo</span>
+        <button class="demo-btn" data-level="high">High</button>
+        <button class="demo-btn" data-level="medium">Medium</button>
+        <button class="demo-btn" data-level="low">Low</button>
+      </div>
+
+      <div class="info-small">
+        <span class="icon">ℹ️</span>
+        Medium risk = drive carefully, not that an accident will happen.
+      </div>
+    </div>
+
+    <!-- CARD 3: DRIVER ADVISORY -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon">🔔</span>
+        <span>Driver Advisory</span>
+      </div>
+
+      <ul class="advisory-list" id="advisory-list">
+        <li class="advisory-item advisory-neutral">
+          <span class="icon">ℹ️</span>
+          <span>Enable driving mode to get live advisory</span>
+        </li>
+      </ul>
+
+      <div class="quick-tips">
+        <div class="tips-label">QUICK TIPS</div>
+        <div class="tips-container" id="tips-container">
+          <div class="tip-item">Always wear your seatbelt before starting the engine.</div>
+          <div class="tip-item">Never use your phone while driving.</div>
+          <div class="tip-item">Keep a safe following distance at all times.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 4: SAFETY INDICATORS & ROUTE -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon">📈</span>
+        <span>Safety Indicators</span>
+      </div>
+
+      <div class="indicators-container">
+        <div class="indicator-item">
+          <div class="indicator-header">
+            <span class="indicator-name">Visibility</span>
+            <span class="indicator-value">--</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="indicator-item">
+          <div class="indicator-header">
+            <span class="indicator-name">Traffic</span>
+            <span class="indicator-value">--</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="indicator-item">
+          <div class="indicator-header">
+            <span class="indicator-name">Road Condition</span>
+            <span class="indicator-value">--</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="indicator-item">
+          <div class="indicator-header">
+            <span class="indicator-name">Weather Safety</span>
+            <span class="indicator-value">--</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROUTE RISK SECTION -->
+      <div class="route-section">
+        <div class="route-title">
+          <span class="icon">🛣️</span>
+          Route Risk
+        </div>
+
+        <div class="location-badge">
+          <span class="icon">📍</span>
+          <span>Your current location (auto)</span>
+        </div>
+
+        <div class="route-search-container">
+          <input 
+            type="text" 
+            id="route-input" 
+            class="route-input" 
+            placeholder="Enter destination (e.g. Civil Lines)"
+          >
+          <div class="suggestions-dropdown" id="suggestions-dropdown"></div>
+        </div>
+
+        <button class="btn-secondary" id="check-route-btn">
+          <span class="icon">🔍</span>
+          Check Route Risk
+        </button>
+
+        <div class="route-result" id="route-result" style="display: none;"></div>
       </div>
     </div>
   </div>
-</header>
 
-<!-- ── DRIVING BANNER ── -->
-<div class="drive-banner" id="driveBanner" style="display:none;">
-  <i class="fa-solid fa-car"></i>
-  <span>Driving Mode Active — Risk monitoring enabled</span>
-  <div class="pulse-dot"></div>
-</div>
-
-<!-- ── NOT DRIVING NOTICE ── -->
-<div class="idle-notice" id="idleNotice">
-  <i class="fa-solid fa-circle-info"></i>
-  <span>Toggle <strong>"Driving"</strong> to enable risk prediction</span>
-</div>
-
-<!-- ── MAIN GRID ── -->
-<div class="dash-grid">
-
-  <!-- Card 1: Environment -->
-  <div class="card env-card">
-    <div class="card-title">
-      <i class="fa-solid fa-satellite-dish"></i>
-      <span>Current Environment</span>
-      <div class="live-badge"><span class="live-dot"></span>Live</div>
-    </div>
-    <div class="env-grid">
-      <div class="env-item">
-        <div class="env-icon loc-icon"><i class="fa-solid fa-location-dot"></i></div>
-        <div class="env-data">
-          <div class="env-label">Location</div>
-          <div class="env-val" id="location">Detecting...</div>
-        </div>
-      </div>
-      <div class="env-item">
-        <div class="env-icon city-icon"><i class="fa-solid fa-city"></i></div>
-        <div class="env-data">
-          <div class="env-label">City</div>
-          <div class="env-val" id="city">Fetching...</div>
-        </div>
-      </div>
-      <div class="env-item">
-        <div class="env-icon temp-icon"><i class="fa-solid fa-temperature-half"></i></div>
-        <div class="env-data">
-          <div class="env-label">Temperature</div>
-          <div class="env-val" id="temperature">--</div>
-        </div>
-      </div>
-      <div class="env-item">
-        <div class="env-icon wx-icon"><i class="fa-solid fa-cloud-sun"></i></div>
-        <div class="env-data">
-          <div class="env-label">Weather</div>
-          <div class="env-val" id="weather">--</div>
-        </div>
-      </div>
-      <div class="env-item">
-        <div class="env-icon hum-icon"><i class="fa-solid fa-droplet"></i></div>
-        <div class="env-data">
-          <div class="env-label">Humidity</div>
-          <div class="env-val" id="humidity">--</div>
-        </div>
-      </div>
-      <div class="env-item">
-        <div class="env-icon wind-icon"><i class="fa-solid fa-wind"></i></div>
-        <div class="env-data">
-          <div class="env-label">Wind</div>
-          <div class="env-val" id="windspeed">--</div>
-        </div>
-      </div>
-      <div class="env-item">
-        <div class="env-icon time-icon"><i class="fa-regular fa-clock"></i></div>
-        <div class="env-data">
-          <div class="env-label">Time</div>
-          <div class="env-val" id="time">--:--:--</div>
-        </div>
-      </div>
-      <div class="env-item">
-        <div class="env-icon bs-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="env-data">
-          <div class="env-label">Nearest Zone</div>
-          <div class="env-val" id="blackspot">Checking...</div>
-        </div>
-      </div>
-    </div>
-    <div id="gps-status" class="gps-status info">Initialising GPS...</div>
-  </div>
-
-  <!-- Card 2: Risk -->
-  <div class="card risk-card">
-    <div class="card-title">
-      <i class="fa-solid fa-brain"></i>
-      <span>Risk Prediction</span>
-    </div>
-
-    <div id="riskBox" class="risk-box waiting">
-      <div class="risk-icon-wrap">
-        <i class="fa-solid fa-shield-halved risk-shield"></i>
-      </div>
-      <div class="risk-level-text" id="riskText">Waiting</div>
-      <div class="risk-sub" id="riskSub">Toggle driving mode and click Check Risk</div>
-    </div>
-
-    <button class="check-btn" id="checkBtn" onclick="predictRisk()" disabled>
-      <i class="fa-solid fa-gauge-high"></i> Check Risk
-    </button>
-
-    <!-- Demo strip -->
-    <div class="demo-strip">
-      <span class="demo-title">Demo</span>
-      <button class="demo-btn demo-high"   onclick="simulateRisk('high')">High</button>
-      <button class="demo-btn demo-medium" onclick="simulateRisk('medium')">Medium</button>
-      <button class="demo-btn demo-low"    onclick="simulateRisk('low')">Low</button>
-    </div>
-
-    <div class="risk-note">
-      <i class="fa-solid fa-circle-info"></i>
-      Medium risk = drive carefully, not that an accident will happen.
-    </div>
-  </div>
-
-  <!-- Card 3: Advisory -->
-  <div class="card advisory-card">
-    <div class="card-title">
-      <i class="fa-solid fa-bell"></i>
-      <span>Driver Advisory</span>
-    </div>
-    <ul class="advisory-list" id="advisoryList">
-      <li class="adv-item adv-neutral">
-        <i class="fa-solid fa-circle-check"></i>
-        Enable driving mode to get live advisory
-      </li>
-    </ul>
-
-    <!-- 3 relevant tips only -->
-    <div class="tips-section">
-      <div class="tips-title">Quick Tips</div>
-      <div class="tips-row" id="tipsRow"></div>
-    </div>
-  </div>
-
-  <!-- Card 4: Indicators -->
-  <div class="card indicators-card">
-    <div class="card-title">
-      <i class="fa-solid fa-chart-simple"></i>
-      <span>Safety Indicators</span>
-    </div>
-    <div class="indicators-wrap">
-      <div class="ind-item">
-        <div class="ind-top">
-          <span class="ind-name">Visibility</span>
-          <span class="ind-pct" id="visPct">--</span>
-        </div>
-        <div class="ind-track"><div class="ind-fill" id="visBar"></div></div>
-      </div>
-      <div class="ind-item">
-        <div class="ind-top">
-          <span class="ind-name">Traffic</span>
-          <span class="ind-pct" id="trafficPct">--</span>
-        </div>
-        <div class="ind-track"><div class="ind-fill" id="trafficBar"></div></div>
-      </div>
-      <div class="ind-item">
-        <div class="ind-top">
-          <span class="ind-name">Road Condition</span>
-          <span class="ind-pct" id="roadPct">--</span>
-        </div>
-        <div class="ind-track"><div class="ind-fill" id="roadBar"></div></div>
-      </div>
-      <div class="ind-item">
-        <div class="ind-top">
-          <span class="ind-name">Weather Safety</span>
-          <span class="ind-pct" id="wxPct">--</span>
-        </div>
-        <div class="ind-track"><div class="ind-fill" id="wxBar"></div></div>
-      </div>
-    </div>
-
-<div class="route-section">
-  <div class="route-title"><i class="fa-solid fa-route"></i> Route Risk</div>
-  <div class="route-from-display">
-    <i class="fa-solid fa-location-dot" style="color:#16a34a"></i>
-    <span id="routeFromLabel">Your current location (auto)</span>
-  </div>
-  <input type="text" class="route-select" id="routeDestInput"
-    placeholder="Enter destination (e.g. Amer Fort, Sodala)"
-    oninput="searchDestination(this.value)">
-  <div id="routeSuggestions" class="route-suggestions"></div>
-  <button class="route-btn" onclick="checkRouteRisk()">
-    <i class="fa-solid fa-magnifying-glass"></i> Check Route Risk
-  </button>
-  <div id="routeResult" class="route-result" style="display:none;"></div>
-</div>
-
-<!-- Toast -->
-<div class="toast hidden" id="toast"></div>
-
-<!-- User data from Flask -->
-<script>
-  const _userName  = "{{ user_name }}";
-  const _userEmail = "{{ user_email }}";
-  localStorage.setItem("re_userName",  _userName);
-  localStorage.setItem("re_userEmail", _userEmail);
-
-  // Register service worker
-  // if ("serviceWorker" in navigator) {
-  //   navigator.serviceWorker.register("/static/sw.js").catch(function(){});
-  // }
-</script>
-<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
-<script src="{{ url_for('static', filename='firebase-init.js') }}"></script>
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast"></div>
+ <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 </body>
-</html>
