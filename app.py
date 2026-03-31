@@ -3,20 +3,28 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import joblib
 import pandas as pd
+import os  # ← NEW IMPORT
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///RoadEye.db"
+
+# ← DATABASE CHANGES HERE (OLD sqlite line HATAO, YE NAYA ADD KARO)
+DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///RoadEye.db')
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = "roadeye_secret_2026_xk9"
 
 db = SQLAlchemy(app)
 
+# ← USER MODEL CHANGE (phone field ADD KARO)
 class User(db.Model):
     __tablename__ = "users"
     id         = db.Column(db.Integer, primary_key=True)
     name       = db.Column(db.String(100), nullable=False)
     email      = db.Column(db.String(120), unique=True, nullable=False)
     password   = db.Column(db.String(200), nullable=False)
+    phone      = db.Column(db.String(15), nullable=True)  # ← NEW PHONE FIELD
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 model = None
@@ -63,14 +71,19 @@ def signup():
         name     = request.form.get("name", "").strip()
         email    = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
+        phone    = request.form.get("phone", "").strip()  # ← NEW PHONE FIELD
         if not name or not email or not password:
             return render_template("signup.html", error="All fields are required.")
         if len(password) < 6:
             return render_template("signup.html", error="Password must be at least 6 characters.")
+        if phone and not phone.isdigit():
+            return render_template("signup.html", error="Phone must be 10 digits only.")
         existing = User.query.filter_by(email=email).first()
         if existing:
             return render_template("signup.html", error="Email already registered. Please login.")
-        new_user = User(name=name, email=email, password=password)
+        
+        # ← NEW USER CREATION (phone bhi add kiya)
+        new_user = User(name=name, email=email, password=password, phone=phone)
         db.session.add(new_user)
         db.session.commit()
         session["user_id"]    = new_user.id
