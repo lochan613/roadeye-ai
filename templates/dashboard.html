@@ -250,39 +250,20 @@
       </div>
     </div>
 
-    <!-- Route Risk -->
-    <div class="route-section">
-      <div class="route-title"><i class="fa-solid fa-route"></i> Route Risk</div>
-      <select class="route-select" id="routeFrom">
-        <option value="">From — select road</option>
-        <option value="NH48_01">NH-48 Aspura Stretch</option>
-        <option value="NH48_03">NH-48 Sodala Stretch</option>
-        <option value="NH48_04">NH-48 DCM Bypass</option>
-        <option value="NH48_05">NH-48 Bhankrotan</option>
-        <option value="AR_01">Agra Road — Transport Nagar</option>
-        <option value="DR_02">Delhi Road — Jal Mahal</option>
-        <option value="JLN_01">JLN Marg — Ajmeri Gate</option>
-        <option value="AJR_03">Ajmer Road — Sodala</option>
-        <option value="GB_04">Gopalpura — Gujar ki Thadi</option>
-      </select>
-      <select class="route-select" id="routeTo">
-        <option value="">To — select road</option>
-        <option value="NH48_06">NH-48 Mahapura</option>
-        <option value="NH48_02">NH-48 Civil Lines</option>
-        <option value="AR_05">Agra Road — Ring Road</option>
-        <option value="DR_04">Delhi Road — Kukas</option>
-        <option value="JLN_05">JLN Marg — Airport Road</option>
-        <option value="AJR_05">Ajmer Road — 200 Ft Bypass</option>
-        <option value="TR_05">Tonk Road — Chokhi Dhani</option>
-        <option value="KLR_02">Kalwar Road — Hathoj</option>
-      </select>
-      <button class="route-btn" onclick="checkRouteRisk()">
-        <i class="fa-solid fa-magnifying-glass"></i> Check Route
-      </button>
-      <div id="routeResult" class="route-result" style="display:none;"></div>
-    </div>
+<div class="route-section">
+  <div class="route-title"><i class="fa-solid fa-route"></i> Route Risk</div>
+  <div class="route-from-display">
+    <i class="fa-solid fa-location-dot" style="color:#16a34a"></i>
+    <span id="routeFromLabel">Your current location (auto)</span>
   </div>
-
+  <input type="text" class="route-select" id="routeDestInput"
+    placeholder="Enter destination (e.g. Amer Fort, Sodala)"
+    oninput="searchDestination(this.value)">
+  <div id="routeSuggestions" class="route-suggestions"></div>
+  <button class="route-btn" onclick="checkRouteRisk()">
+    <i class="fa-solid fa-magnifying-glass"></i> Check Route Risk
+  </button>
+  <div id="routeResult" class="route-result" style="display:none;"></div>
 </div>
 
 <!-- Toast -->
