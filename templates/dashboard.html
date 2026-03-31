@@ -277,9 +277,9 @@
   localStorage.setItem("re_userEmail", _userEmail);
 
   // Register service worker
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/static/js/sw.js").catch(function(){});
-  }
+  // if ("serviceWorker" in navigator) {
+  //   navigator.serviceWorker.register("/static/sw.js").catch(function(){});
+  // }
 </script>
 <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='firebase-init.js') }}"></script>
