@@ -1,167 +1,84 @@
-/* ============================================================
-   RoadEye — dashboard.js  (Complete)
-   ============================================================ */
+/* ===================================================
+   RoadEye – dashboard.js
+   =================================================== */
 
-// ── STATE ─────────────────────────────────────────────────────
-let isDriving          = false;
-let voiceEnabled       = true;
-let currentWeatherCode = null;
-let currentWindspeed   = null;
-let currentLat         = null;
-let currentLon         = null;
-let currentSegment     = null;
-
-// ── ROAD SEGMENTS ─────────────────────────────────────────────
-const roadSegments = [
-  { id:"NH48_01", name:"NH-48 Aspura",         lat:27.4548, lon:76.0302, end_lat:27.4562, end_lon:76.0332, blackspot:1, road_type:0, speed_limit:90, road_surface:2 },
-  { id:"NH48_02", name:"NH-48 Civil Lines",    lat:26.9043, lon:75.7932, end_lat:26.9088, end_lon:75.7795, blackspot:0, road_type:0, speed_limit:90, road_surface:1 },
-  { id:"NH48_03", name:"NH-48 Sodala",         lat:26.9088, lon:75.7795, end_lat:26.8998, end_lon:75.7592, blackspot:1, road_type:0, speed_limit:90, road_surface:1 },
-  { id:"NH48_04", name:"NH-48 DCM Bypass",     lat:26.8998, lon:75.7592, end_lat:26.8902, end_lon:75.7385, blackspot:1, road_type:0, speed_limit:90, road_surface:2 },
-  { id:"NH48_05", name:"NH-48 Bhankrotan",     lat:26.8902, lon:75.7385, end_lat:26.8795, end_lon:75.7150, blackspot:1, road_type:0, speed_limit:90, road_surface:1 },
-  { id:"NH48_06", name:"NH-48 Mahapura",       lat:26.8795, lon:75.7150, end_lat:26.8642, end_lon:75.6845, blackspot:1, road_type:0, speed_limit:90, road_surface:2 },
-  { id:"AR_01",   name:"Agra Rd Transport Ngr",lat:26.9055, lon:75.8455, end_lat:26.9100, end_lon:75.8600, blackspot:1, road_type:2, speed_limit:70, road_surface:2 },
-  { id:"AR_05",   name:"Agra Rd Ring Road",    lat:26.8610, lon:75.9550, end_lat:26.8550, end_lon:76.0100, blackspot:1, road_type:2, speed_limit:70, road_surface:2 },
-  { id:"DR_02",   name:"Delhi Rd Jal Mahal",   lat:26.9535, lon:75.8450, end_lat:26.9870, end_lon:75.8570, blackspot:1, road_type:2, speed_limit:60, road_surface:1 },
-  { id:"DR_04",   name:"Delhi Rd Kukas",       lat:27.0400, lon:75.8950, end_lat:27.0780, end_lon:75.9320, blackspot:0, road_type:2, speed_limit:80, road_surface:1 },
-  { id:"JLN_01",  name:"JLN Marg Ajmeri Gate", lat:26.9215, lon:75.8315, end_lat:26.9120, end_lon:75.8200, blackspot:0, road_type:1, speed_limit:50, road_surface:0 },
-  { id:"JLN_05",  name:"JLN Marg Airport Rd",  lat:26.8700, lon:75.7930, end_lat:26.8470, end_lon:75.7860, blackspot:0, road_type:1, speed_limit:60, road_surface:0 },
-  { id:"AJR_03",  name:"Ajmer Rd Sodala",      lat:26.9055, lon:75.7695, end_lat:26.8935, end_lon:75.7592, blackspot:1, road_type:1, speed_limit:40, road_surface:1 },
-  { id:"AJR_05",  name:"Ajmer Rd 200 Ft",      lat:26.8935, lon:75.7592, end_lat:26.8902, end_lon:75.7385, blackspot:1, road_type:0, speed_limit:80, road_surface:2 },
-  { id:"GB_04",   name:"Gopalpura Gujar Thadi", lat:26.8825, lon:75.7535, end_lat:26.8920, end_lon:75.7440, blackspot:1, road_type:1, speed_limit:50, road_surface:1 },
-  { id:"TR_05",   name:"Tonk Rd Chokhi Dhani", lat:26.7740, lon:75.8280, end_lat:26.7500, end_lon:75.8250, blackspot:0, road_type:2, speed_limit:70, road_surface:1 },
-  { id:"KLR_02",  name:"Kalwar Rd Hathoj",     lat:26.9900, lon:75.7550, end_lat:27.0100, end_lon:75.7400, blackspot:0, road_type:2, speed_limit:60, road_surface:2 },
-];
-
-function getNearestSegment(lat, lon) {
-  let nearest = null, minDist = Infinity;
-  roadSegments.forEach(function(s) {
-    const d = Math.sqrt(Math.pow(lat-s.lat,2)+Math.pow(lon-s.lon,2));
-    if (d < minDist) { minDist = d; nearest = s; }
-  });
-  return nearest;
-}
-
-// ── INIT ──────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", function() {
-  loadUser();
+  
+
+  // Load user name from session/localStorage
+  const name = localStorage.getItem("re_userName") || "{{ user_name }}";
+  const email = localStorage.getItem("re_userEmail") || "--";
+  setUserDisplay(name, email);
+
   startClock();
-  initTheme();
+  startUptime();
   initGPS();
-  loadTips();
-  closeDropdownOnOutsideClick();
+  rotateTips();
 });
 
-// ── USER ──────────────────────────────────────────────────────
-function loadUser() {
-  const name  = localStorage.getItem("re_userName")  || "Driver";
-  const email = localStorage.getItem("re_userEmail") || "";
-  setEl("accountName",   name);
-  setEl("accountAvatar", name.charAt(0).toUpperCase());
-  setEl("dropName",      name);
-  setEl("dropEmail",     email);
-  setEl("dropAvatar",    name.charAt(0).toUpperCase());
-}
-
-// ── ACCOUNT DROPDOWN ──────────────────────────────────────────
-function toggleAccountMenu() {
-  const dd  = document.getElementById("accountDropdown");
-  const chv = document.getElementById("accountChevron");
-  const isOpen = dd.classList.contains("open");
-  dd.classList.toggle("open", !isOpen);
-  chv.classList.toggle("open", !isOpen);
-}
-
-function closeDropdownOnOutsideClick() {
-  document.addEventListener("click", function(e) {
-    const menu = document.getElementById("accountMenu");
-    if (menu && !menu.contains(e.target)) {
-      document.getElementById("accountDropdown").classList.remove("open");
-      document.getElementById("accountChevron").classList.remove("open");
-    }
-  });
-}
-
-// ── DRIVING TOGGLE ────────────────────────────────────────────
-function toggleDriving() {
-  isDriving = !isDriving;
-  const sw     = document.getElementById("driveToggle");
-  const label  = document.getElementById("driveLabel");
-  const banner = document.getElementById("driveBanner");
-  const notice = document.getElementById("idleNotice");
-  const btn    = document.getElementById("checkBtn");
-
-  sw.classList.toggle("active", isDriving);
-  label.textContent   = isDriving ? "Driving" : "Not Driving";
-  banner.style.display = isDriving ? "flex" : "none";
-  notice.style.display = isDriving ? "none" : "flex";
-  btn.disabled         = !isDriving;
-
-  if (isDriving) {
-    showToast("Driving mode ON — risk monitoring active");
-    speak("Driving mode enabled. RoadEye is now monitoring road risk.");
-  } else {
-    showToast("Driving mode OFF");
-    resetRiskBox();
-  }
-}
-
-function resetRiskBox() {
-  const box = document.getElementById("riskBox");
-  box.className = "risk-box waiting";
-  box.querySelector(".risk-icon-wrap").innerHTML = '<i class="fa-solid fa-shield-halved risk-shield"></i>';
-  setEl("riskText", "Waiting");
-  setEl("riskSub",  "Toggle driving mode and click Check Risk");
+// ── USER DISPLAY ──────────────────────────────────────────────
+function setUserDisplay(name, email) {
+  const headerName = document.getElementById("headerUserName");
+  const dropName   = document.getElementById("dropdownName");
+  const dropEmail  = document.getElementById("dropdownEmail");
+  const avatar     = document.getElementById("userAvatar");
+  if (headerName) headerName.textContent = name;
+  if (dropName)   dropName.textContent   = name;
+  if (dropEmail)  dropEmail.textContent  = email;
+  if (avatar)     avatar.textContent     = name.charAt(0).toUpperCase();
 }
 
 // ── CLOCK ─────────────────────────────────────────────────────
 function startClock() {
   function tick() {
     const now = new Date();
-    const t = String(now.getHours()).padStart(2,'0') + ":" +
-              String(now.getMinutes()).padStart(2,'0') + ":" +
-              String(now.getSeconds()).padStart(2,'0');
-    setEl("time", t);
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    const s = String(now.getSeconds()).padStart(2,'0');
+    const el = document.getElementById("time");
+    if (el) el.textContent = h + ":" + m + ":" + s;
   }
-  tick(); setInterval(tick, 1000);
+  tick();
+  setInterval(tick, 1000);
 }
 
-// ── THEME ─────────────────────────────────────────────────────
-function initTheme() {
-  if (localStorage.getItem("re_theme") === "dark") {
-    document.body.classList.add("dark");
-    setEl("themeLabel", "Light Mode");
-  }
+// ── UPTIME ────────────────────────────────────────────────────
+const _startTime = Date.now();
+function startUptime() {
+  setInterval(function() {
+    const sec = Math.floor((Date.now() - _startTime) / 1000);
+    const h = String(Math.floor(sec / 3600)).padStart(2,'0');
+    const m = String(Math.floor((sec % 3600) / 60)).padStart(2,'0');
+    const s = String(sec % 60).padStart(2,'0');
+    const el = document.getElementById("uptime");
+    if (el) el.textContent = h + ":" + m + ":" + s;
+  }, 1000);
 }
-
-function toggleTheme() {
-  const isDark = document.body.classList.toggle("dark");
-  localStorage.setItem("re_theme", isDark ? "dark" : "light");
-  setEl("themeLabel", isDark ? "Light Mode" : "Dark Mode");
-}
-
-// ── VOICE ─────────────────────────────────────────────────────
-function toggleVoice() {
-  voiceEnabled = !voiceEnabled;
-  setEl("voiceLabel", voiceEnabled ? "Voice On" : "Voice Off");
-  const icon = document.getElementById("voiceIcon");
-  if (icon) icon.className = voiceEnabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark";
-  showToast(voiceEnabled ? "Voice alerts ON" : "Voice alerts OFF");
-}
+// ── VOICE ALERT ───────────────────────────────────────────────
+let voiceEnabled = true;
 
 function speak(text) {
-  if (!voiceEnabled || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "en-IN"; u.rate = 0.9; u.pitch = 1;
-  window.speechSynthesis.speak(u);
+  if (!voiceEnabled) return;
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel(); // stop if already speaking
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang  = 'en-IN'; // Indian English
+  utterance.rate  = 0.9;     // slight slow for clarity
+  utterance.pitch = 1;
+  window.speechSynthesis.speak(utterance);
 }
-
 // ── GPS ───────────────────────────────────────────────────────
+let currentWeatherCode = null;
+let currentWindspeed   = null;
+let currentLat         = null;
+let currentLon         = null;
+
 function initGPS() {
-  setStatus("Requesting GPS permission...", "info");
+  setStatus("📡 Requesting GPS permission...", "info");
   if (!navigator.geolocation) {
-    setStatus("GPS not supported", "error");
-    fetchWeatherFallback(); return;
+    setStatus("❌ GPS not supported by this browser", "error");
+    fetchWeatherFallback();
+    return;
   }
   navigator.geolocation.watchPosition(onGPSSuccess, onGPSError, {
     enableHighAccuracy: true, timeout: 15000, maximumAge: 30000
@@ -173,413 +90,471 @@ function onGPSSuccess(pos) {
   currentLon = pos.coords.longitude;
   const acc  = Math.round(pos.coords.accuracy);
 
-  setEl("location", currentLat.toFixed(4) + ", " + currentLon.toFixed(4) + " (±" + acc + "m)");
+  // If accuracy is very poor (over 1km), warn the user and also try IP fallback
+  if (acc > 1000) {
+    setStatus("⚠️ GPS accuracy is low (±" + acc + "m) — desktop GPS is limited. Try on mobile for better results.", "info");
+  } else {
+    setStatus("📍 GPS acquired (±" + acc + "m) — loading weather...", "info");
+  }
+
+  document.getElementById("location").textContent =
+    currentLat.toFixed(5) + ", " + currentLon.toFixed(5) + " (±" + acc + "m)";
+
   localStorage.setItem("re_lat", currentLat);
   localStorage.setItem("re_lon", currentLon);
 
-  currentSegment = getNearestSegment(currentLat, currentLon);
-  updateBlackspot();
-
-  setStatus(acc > 1000 ? "Low GPS accuracy — works better on mobile" : "GPS acquired (±" + acc + "m)",
-            acc > 1000 ? "info" : "success");
+  checkBlackspot(currentLat, currentLon);
   fetchWeather(currentLat, currentLon);
   fetchCityName(currentLat, currentLon);
 }
 
 function onGPSError(err) {
-  setEl("location", "GPS denied — using IP location");
-  setStatus("Using IP location fallback", "info");
+  let msg = "GPS unavailable — using IP fallback";
+  if (err.code === 1) msg = "Location permission denied — using IP fallback";
+  setStatus("⚠️ " + msg, "info");
+  document.getElementById("location").textContent = msg;
   fetchWeatherFallback();
 }
 
-function updateBlackspot() {
-  if (!currentSegment) return;
-  setEl("blackspot", currentSegment.blackspot
-    ? currentSegment.name + " (Risk Zone)"
-    : currentSegment.name + " (Safe)");
-}
-
-// ── CITY ──────────────────────────────────────────────────────
+// ── CITY NAME ─────────────────────────────────────────────────
 function fetchCityName(lat, lon) {
   fetch("https://nominatim.openstreetmap.org/reverse?lat=" + lat + "&lon=" + lon + "&format=json")
-    .then(r => r.json())
-    .then(function(d) {
-      const a = d.address;
-      const city  = a.city || a.town || a.village || "Unknown";
-      const state = a.state || "";
-      const full  = city + (state ? ", " + state : "");
-      setEl("city", full);
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      const a = data.address;
+      const city    = a.city || a.town || a.village || a.county || "Unknown";
+      const state   = a.state   || "";
+      const country = a.country || "";
+      const full = city + (state ? ", " + state : "") + (country ? ", " + country : "");
+      document.getElementById("city").textContent = full;
       localStorage.setItem("re_city", full);
     })
-    .catch(function() { setEl("city", "Unavailable"); });
+    .catch(function() {
+      document.getElementById("city").textContent = "City unavailable";
+    });
 }
 
 // ── WEATHER ───────────────────────────────────────────────────
 function fetchWeather(lat, lon) {
-  fetch("https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
-    "&current=temperature_2m,relative_humidity_2m,windspeed_10m,weathercode&windspeed_unit=kmh&timezone=auto")
-    .then(r => r.json())
+  const url =
+    "https://api.open-meteo.com/v1/forecast" +
+    "?latitude=" + lat + "&longitude=" + lon +
+    "&current=temperature_2m,relative_humidity_2m,windspeed_10m,weathercode" +
+    "&windspeed_unit=kmh&timezone=auto";
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
     .then(function(data) {
       const c = data.current;
       currentWeatherCode = c.weathercode;
       currentWindspeed   = c.windspeed_10m;
-      const desc = decodeWeather(c.weathercode);
 
-      setEl("temperature", c.temperature_2m + " °C");
-      setEl("weather",     desc);
-      setEl("humidity",    c.relative_humidity_2m + "%");
-      setEl("windspeed",   c.windspeed_10m + " km/h");
+      const weatherDesc = decodeWeatherCode(c.weathercode);
 
-      localStorage.setItem("re_weather",     desc);
+      document.getElementById("temperature").textContent = c.temperature_2m + " °C";
+      document.getElementById("weather").textContent     = weatherDesc;
+      document.getElementById("humidity").textContent    = c.relative_humidity_2m + "%";
+      document.getElementById("windspeed").textContent   = c.windspeed_10m + " km/h";
+
+      localStorage.setItem("re_weather",     weatherDesc);
       localStorage.setItem("re_weatherCode", c.weathercode);
       localStorage.setItem("re_temp",        c.temperature_2m);
       localStorage.setItem("re_wind",        c.windspeed_10m);
       localStorage.setItem("re_humidity",    c.relative_humidity_2m);
 
-      const score = quickScore(c.weathercode, c.windspeed_10m);
+      const score = weatherRiskScore(c.weathercode, c.windspeed_10m, new Date().getHours());
       updateIndicators(score);
-      updateAdvisory(score, c.weathercode, c.windspeed_10m);
-      setStatus("Live weather loaded", "success");
+      updateAdvisory(c.weathercode, c.windspeed_10m);
+
+      setStatus("✅ Live weather loaded successfully", "success");
     })
-    .catch(function() { setStatus("Weather fetch failed", "error"); });
+    .catch(function() {
+      setStatus("⚠️ Weather fetch failed — check internet connection", "error");
+    });
 }
 
 function fetchWeatherFallback() {
   fetch("https://ipapi.co/json/")
-    .then(r => r.json())
+    .then(function(r) { return r.json(); })
     .then(function(d) {
-      currentLat = d.latitude; currentLon = d.longitude;
-      setEl("location", "IP: " + d.latitude.toFixed(4) + ", " + d.longitude.toFixed(4));
-      setEl("city", (d.city||"") + (d.region ? ", "+d.region : ""));
-      localStorage.setItem("re_lat", currentLat);
-      localStorage.setItem("re_lon", currentLon);
-      currentSegment = getNearestSegment(currentLat, currentLon);
-      updateBlackspot();
+      document.getElementById("location").textContent =
+        "IP: " + d.latitude.toFixed(4) + ", " + d.longitude.toFixed(4);
+      document.getElementById("city").textContent =
+        (d.city || "") + (d.region ? ", " + d.region : "") + (d.country_name ? ", " + d.country_name : "");
+      currentLat = d.latitude;
+      currentLon = d.longitude;
       fetchWeather(d.latitude, d.longitude);
     })
     .catch(function() {
+      // Default Jaipur
       currentLat = 26.9124; currentLon = 75.7873;
-      setEl("location", "Default: Jaipur");
-      setEl("city", "Jaipur, Rajasthan");
-      currentSegment = getNearestSegment(currentLat, currentLon);
-      updateBlackspot();
+      document.getElementById("location").textContent = "Default: Jaipur, India";
+      document.getElementById("city").textContent = "Jaipur, Rajasthan, India";
       fetchWeather(26.9124, 75.7873);
     });
 }
 
-function decodeWeather(code) {
-  if (code === 0)        return "Clear Sky";
-  if (code <= 2)         return "Partly Cloudy";
-  if (code === 3)        return "Overcast";
-  if (code <= 49)        return "Foggy";
-  if (code <= 55)        return "Drizzle";
-  if (code <= 65)        return "Rain";
-  if (code <= 82)        return "Rain Showers";
-  if (code >= 95)        return "Thunderstorm";
+// ── WMO WEATHER DECODER ───────────────────────────────────────
+function decodeWeatherCode(code) {
+  if (code === 0)          return "Clear Sky ☀️";
+  if (code <= 2)           return "Partly Cloudy ⛅";
+  if (code === 3)          return "Overcast ☁️";
+  if (code <= 49)          return "Foggy 🌫️";
+  if (code <= 55)          return "Drizzle 🌦️";
+  if (code <= 65)          return "Rain 🌧️";
+  if (code <= 77)          return "Snow 🌨️";
+  if (code <= 82)          return "Rain Showers 🌦️";
+  if (code <= 86)          return "Snow Showers 🌨️";
+  if (code >= 95)          return "Thunderstorm ⛈️";
   return "Unknown";
 }
 
-// ── FEATURE HELPERS ───────────────────────────────────────────
-function getWeatherType(code, wind) {
-  if (code >= 45 && code <= 49)            return 3; // Fog
-  if (code >= 95 || (code >= 61 && code <= 67)) return 2; // Heavy Rain
-  if ((code >= 51 && code <= 57) || (code >= 80 && code <= 82)) return 1; // Light Rain
-  if (getSeason() === 0 && wind > 30)      return 4; // Dust Storm
-  return 0;
+// ── BLACKSPOT ─────────────────────────────────────────────────
+function checkBlackspot(lat, lon) {
+  const spots = [
+    { lat:26.89, lon:75.80 },
+    { lat:28.63, lon:77.21 },
+    { lat:19.07, lon:72.87 },
+  ];
+  const found = spots.some(function(s) {
+    return Math.abs(lat - s.lat) < 0.05 && Math.abs(lon - s.lon) < 0.05;
+  });
+  document.getElementById("blackspot").innerHTML = found
+    ? '<span style="color:#dc2626;font-weight:800;">⚠️ Yes — Accident Prone Zone</span>'
+    : '<span style="color:#16a34a;font-weight:800;">✅ No — Safe Zone</span>';
 }
 
-function getSeason() {
-  const m = new Date().getMonth() + 1;
-  if (m >= 3 && m <= 6) return 0;
-  if (m >= 7 && m <= 9) return 1;
-  return 2;
-}
+// ── RISK SCORE ────────────────────────────────────────────────
+function weatherRiskScore(code, wind, hour) {
+  let score = 0;
+  if (code >= 95)      score += 45;
+  else if (code >= 66) score += 40;
+  else if (code >= 51) score += 28;
+  else if (code >= 45) score += 35;
+  else if (code === 3) score += 10;
+  else                 score += 5;
 
-function getTimeOfDay() {
-  const h = new Date().getHours();
-  if (h >= 22 || h <= 5)                    return 0;
-  if ((h >= 7 && h <= 9)||(h >= 17 && h <= 20)) return 1;
-  return 2;
-}
+  if (wind > 60)      score += 25;
+  else if (wind > 30) score += 15;
+  else if (wind > 15) score += 8;
 
-function getTrafficDensity() {
-  const h = new Date().getHours();
-  if ((h >= 8 && h <= 10)||(h >= 17 && h <= 20)) return 2;
-  if (h >= 22 || h <= 5)                         return 0;
-  return 1;
-}
+  if (hour >= 22 || hour <= 5)   score += 28;
+  else if (hour >= 19)            score += 15;
+  else if (hour <= 8)             score += 10;
 
-function quickScore(code, wind) {
-  let s = 5;
-  if (code >= 95)      s += 45;
-  else if (code >= 61) s += 35;
-  else if (code >= 51) s += 22;
-  else if (code >= 45) s += 30;
-  if (wind > 50) s += 20; else if (wind > 25) s += 10;
-  const h = new Date().getHours();
-  if (h >= 22 || h <= 5) s += 25; else if (h <= 8 || h >= 18) s += 10;
-  return Math.min(100, s);
+  return Math.min(100, score);
 }
 
 // ── PREDICT RISK ──────────────────────────────────────────────
-function predictRisk() {
-  if (!isDriving) { showToast("Enable driving mode first"); return; }
+let statsChecks = 0, statsHigh = 0, statsLow = 0, statsScores = [];
 
-  const btn = document.getElementById("checkBtn");
+function predictRisk() {
+  const btn = document.getElementById("predictBtn");
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analysing...';
 
-  const seg = currentSegment || {
-    lat:26.9124, lon:75.7873, end_lat:26.915, end_lon:75.793,
-    road_type:1, speed_limit:50, blackspot:0, road_surface:0
-  };
+  const box = document.getElementById("riskIndicator");
+  box.className = "risk-box waiting";
+  box.innerHTML = '<div class="risk-box-icon">⏳</div><div class="risk-box-text">Analysing environment...</div><div class="risk-box-sub">Please wait</div>';
 
-  const payload = {
-    start_latitude:  seg.lat,
-    start_longitude: seg.lon,
-    end_latitude:    seg.end_lat || seg.lat + 0.003,
-    end_longitude:   seg.end_lon || seg.lon + 0.003,
-    road_type:       seg.road_type,
-    speed_limit:     seg.speed_limit || 60,
-    blackspot_flag:  seg.blackspot,
-    road_surface:    seg.road_surface || 0,
-    season:          getSeason(),
-    time_of_day:     getTimeOfDay(),
-    weather_type:    getWeatherType(currentWeatherCode || 0, currentWindspeed || 0),
-    traffic_density: getTrafficDensity()
-  };
+  setTimeout(function() {
+    const hour = new Date().getHours();
+    let score = currentWeatherCode !== null
+      ? weatherRiskScore(currentWeatherCode, currentWindspeed || 0, hour)
+      : (hour >= 22 || hour <= 5 ? 50 : 20);
 
-  fetch("/predict", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-  .then(r => r.json())
-  .then(function(data) {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-gauge-high"></i> Check Risk';
-    if (data.error) { showToast("Error: " + data.error); return; }
-    applyRisk(data.risk, data.alert, false);
-  })
-  .catch(function() {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-gauge-high"></i> Check Risk';
-    showToast("Cannot reach server. Is Flask running?");
-  });
+    const blackspotText = document.getElementById("blackspot").textContent;
+    if (blackspotText.includes("Yes")) score = Math.min(100, score + 25);
+
+    let level, cls, icon, msg, sub;
+    if (score >= 65) {
+      level = "HIGH"; cls = "high"; icon = "🚨";
+      msg = "HIGH RISK";
+      sub = "Exercise extreme caution — dangerous conditions";
+    } else if (score >= 35) {
+      level = "MEDIUM"; cls = "medium"; icon = "⚡";
+      msg = "MEDIUM RISK";
+      sub = "Stay focused — do not drive recklessly";
+    } else {
+      level = "LOW"; cls = "low"; icon = "✅";
+      msg = "LOW RISK";
+      sub = "Conditions are relatively safe — stay alert";
+    }
+// Voice alert
+if (score >= 65) {
+  speak("Warning! High risk detected. Please reduce your speed immediately and drive with extreme caution.");
+} else if (score >= 35) {
+  speak("Caution. Medium risk detected. Road conditions are not ideal. Please focus on the road and maintain safe speed.");
+} else {
+  speak("Low risk. Road conditions are relatively safe. Drive responsibly and stay alert.");
 }
+    box.className = "risk-box " + cls;
+    box.innerHTML =
+      '<div class="risk-box-icon">' + icon + '</div>' +
+      '<div class="risk-box-text">' + msg + ' (Score: ' + score + '/100)</div>' +
+      '<div class="risk-box-sub">' + sub + '</div>';
 
-// ── DEMO MODE ─────────────────────────────────────────────────
-function simulateRisk(level) {
-  const scenarios = {
-    high:   { start_latitude:27.4548, start_longitude:76.0302, end_latitude:27.4562, end_longitude:76.0332, road_type:0, speed_limit:90, blackspot_flag:1, road_surface:2, season:2, time_of_day:0, weather_type:3, traffic_density:2 },
-    medium: { start_latitude:26.9055, start_longitude:75.8455, end_latitude:26.9100, end_longitude:75.8600, road_type:1, speed_limit:60, blackspot_flag:0, road_surface:1, season:1, time_of_day:1, weather_type:1, traffic_density:2 },
-    low:    { start_latitude:26.9215, start_longitude:75.8315, end_latitude:26.9120, end_longitude:75.8200, road_type:1, speed_limit:40, blackspot_flag:0, road_surface:0, season:0, time_of_day:2, weather_type:0, traffic_density:0 }
-  };
+    statsChecks++;
+    statsScores.push(score);
+    if (level === "HIGH")  statsHigh++;
+    if (level === "LOW")   statsLow++;
 
-  const btn = document.getElementById("checkBtn");
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Simulating...';
+    updateLiveStats();
+    addHistory(level, score);
+    updateIndicators(score);
 
-  fetch("/predict", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(scenarios[level])
-  })
-  .then(r => r.json())
-  .then(function(data) {
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-gauge-high"></i> Check Risk';
-    if (data.error) { showToast("Error: " + data.error); return; }
-    applyRisk(data.risk, data.alert, true);
-  })
-  .catch(function() {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-gauge-high"></i> Check Risk';
-    showToast("Cannot reach server.");
-  });
-}
+    btn.innerHTML = '<i class="fa-solid fa-gauge-high"></i> Check Current Risk';
+    showDashToast(icon + " " + msg + " detected (Score: " + score + ")");
 
-// ── APPLY RISK ────────────────────────────────────────────────
-function applyRisk(risk, alert, isDemo) {
-  const box  = document.getElementById("riskBox");
-  const cls  = ["low", "medium", "high"][risk];
-  const icons= ["fa-shield-halved", "fa-triangle-exclamation", "fa-circle-exclamation"];
-  const txt  = ["LOW RISK", "MEDIUM RISK", "HIGH RISK"];
-  const clr  = ["#15803d", "#92400e", "#b91c1c"];
-
-  box.className = "risk-box " + cls;
-  box.querySelector(".risk-icon-wrap").innerHTML =
-    '<i class="fa-solid ' + icons[risk] + ' risk-shield" style="color:' + clr[risk] + '"></i>';
-  setEl("riskText", txt[risk] + (isDemo ? " (Demo)" : ""));
-  setEl("riskSub",  alert);
-
-  // Voice
-  const voices = [
-    "Low risk. Conditions are safe. Drive responsibly.",
-    "Caution. Medium risk. Stay focused and maintain safe speed.",
-    "Warning! High risk detected. Reduce speed immediately."
-  ];
-  speak(voices[risk]);
-
-  // Firebase notification
-  if (typeof sendFirebaseNotification === "function") {
-    const types = ["low","medium","high"];
-    const titles = ["RoadEye — Low Risk", "RoadEye — Medium Risk!", "RoadEye — HIGH RISK Alert!"];
-    if (risk >= 1) sendFirebaseNotification(titles[risk], alert, types[risk]);
-  }
-
-  // Update indicators and advisory
-  const score = risk * 33;
-  updateIndicators(score);
-  updateAdvisory(score, currentWeatherCode, currentWindspeed);
-  saveHistory(txt[risk], score);
-  showToast((isDemo ? "Demo: " : "") + txt[risk]);
+    saveHistoryLS(level, score);
+  }, 1600);
 }
 
 // ── ADVISORY ─────────────────────────────────────────────────
-function updateAdvisory(score, code, wind) {
+function updateAdvisory(code, wind) {
   const list = document.getElementById("advisoryList");
-  if (!list) return;
+  const hour = new Date().getHours();
   const tips = [];
 
-  if (score >= 66) {
-    tips.push({ t:"Reduce speed immediately — dangerous conditions ahead", c:"adv-danger", i:"fa-circle-exclamation" });
-    tips.push({ t:"Increase following distance significantly", c:"adv-danger", i:"fa-car" });
-    tips.push({ t:"Avoid phone use completely", c:"adv-warn", i:"fa-mobile-screen-button" });
-  } else if (score >= 33) {
-    tips.push({ t:"Stay focused — conditions not ideal for driving", c:"adv-warn", i:"fa-eye" });
-    tips.push({ t:"Maintain safe speed and distance", c:"adv-warn", i:"fa-gauge-simple" });
-  } else {
-    tips.push({ t:"Conditions are relatively safe — stay alert", c:"adv-ok", i:"fa-circle-check" });
-    tips.push({ t:"Drive at normal speed and observe traffic", c:"adv-ok", i:"fa-road" });
+  if (code >= 95)        tips.push({ t: "⛈️ Thunderstorm alert! Avoid driving if possible.", c: "danger" });
+  else if (code >= 45 && code <= 49) tips.push({ t: "🌫️ Fog detected — use fog lights and slow down.", c: "danger" });
+  else if (code >= 51 && code <= 65) tips.push({ t: "🌧️ Rain detected — reduce speed and increase following distance.", c: "warning" });
+
+  if (wind > 50) tips.push({ t: "💨 Strong winds — keep a firm grip on the steering wheel.", c: "warning" });
+  if (hour >= 22 || hour < 6) tips.push({ t: "🌙 Night driving — stay alert, use headlights.", c: "warning" });
+  if (tips.length === 0) {
+    tips.push({ t: "✅ Conditions look good. Drive safely and stay alert!", c: "" });
+    tips.push({ t: "🚗 Maintain safe speed and following distance.", c: "" });
   }
 
-  if (code !== null) {
-    if (code >= 45 && code <= 49) tips.push({ t:"Fog — use fog lights, reduce speed to 30 km/h", c:"adv-danger", i:"fa-smog" });
-    if (code >= 95)               tips.push({ t:"Thunderstorm — avoid driving if possible", c:"adv-danger", i:"fa-bolt" });
-    if (wind && wind > 40)        tips.push({ t:"Strong winds — keep firm grip on steering", c:"adv-warn", i:"fa-wind" });
-  }
-
-  list.innerHTML = tips.map(function(t) {
-    return '<li class="adv-item ' + t.c + '"><i class="fa-solid ' + t.i + '"></i>' + t.t + '</li>';
+  list.innerHTML = tips.map(function(tip) {
+    return '<li class="' + tip.c + '">' + tip.t + '</li>';
   }).join("");
 }
 
 // ── INDICATORS ────────────────────────────────────────────────
 function updateIndicators(score) {
-  animBar("visBar",     "visPct",     Math.max(10,100-score));
-  animBar("trafficBar", "trafficPct", Math.min(90,20+score*.6));
-  animBar("roadBar",    "roadPct",    Math.max(10,100-score*.8));
-  animBar("wxBar",      "wxPct",      Math.max(10,100-score*.9));
+  const vis     = Math.max(10, 100 - score);
+  const traffic = Math.min(90, 20 + score * 0.6);
+  const road    = Math.max(10, 100 - score * 0.8);
+  const weather = Math.max(10, 100 - score * 0.9);
+
+  animateBar("visibilityBar", "visibilityPct", vis);
+  animateBar("trafficBar",    "trafficPct",    traffic);
+  animateBar("roadBar",       "roadPct",       road);
+  animateBar("weatherBar",    "weatherPct",    weather);
 }
 
-function animBar(barId, pctId, pct) {
+function animateBar(barId, pctId, pct) {
   const bar = document.getElementById(barId);
   const lbl = document.getElementById(pctId);
   if (!bar) return;
-  setTimeout(function() {
-    bar.style.width = pct + "%";
-    bar.style.background = pct > 60 ? "#16a34a" : pct > 35 ? "#ea580c" : "#dc2626";
-  }, 80);
+  bar.style.width = pct + "%";
+  bar.style.background =
+    pct > 60 ? "#16a34a" :
+    pct > 35 ? "#d97706" : "#dc2626";
   if (lbl) lbl.textContent = Math.round(pct) + "%";
 }
 
-// ── ROUTE RISK ────────────────────────────────────────────────
+// ── LIVE STATS ────────────────────────────────────────────────
+function updateLiveStats() {
+  document.getElementById("checksToday").textContent = statsChecks;
+  document.getElementById("highRiskCount").textContent = statsHigh;
+  document.getElementById("safeCount").textContent = statsLow;
+  if (statsScores.length > 0) {
+    const avg = Math.round(statsScores.reduce(function(a,b){return a+b;},0) / statsScores.length);
+    document.getElementById("avgScore").textContent = avg;
+  }
+}
+// ── ROUTE RISK ─────────────────────────────────────────────
+const routeData = {
+  "NH48_01": { name:"NH-48 Aspura",        lat:27.454846, lon:76.030283, end_lat:27.456285, end_lon:76.033271, blackspot:1, road_type:0, speed_limit:90 },
+  "NH48_02": { name:"Civil Lines",          lat:26.904344, lon:75.793283, end_lat:26.908846, end_lon:75.779521, blackspot:0, road_type:0, speed_limit:90 },
+  "NH48_06": { name:"NH-48 Mahapura",      lat:26.879585, lon:75.715027, end_lat:26.8642,   end_lon:75.6845,   blackspot:1, road_type:0, speed_limit:90 },
+  "GB_01":   { name:"Gopalpura-Tonk Road", lat:26.856000, lon:75.820000, end_lat:26.868000, end_lon:75.810000, blackspot:0, road_type:1, speed_limit:50 },
+  "GB_05":   { name:"Gopalpura-Heerapura", lat:26.892000, lon:75.744000, end_lat:26.893500, end_lon:75.748500, blackspot:1, road_type:1, speed_limit:50 },
+  "AR_01":   { name:"Agra Rd-Transport Ngr",lat:26.905500,lon:75.845500, end_lat:26.910000, end_lon:75.860000, blackspot:1, road_type:2, speed_limit:70 },
+  "AR_05":   { name:"Agra Rd-Kanota",      lat:26.861000, lon:75.955000, end_lat:26.855000, end_lon:76.010000, blackspot:1, road_type:2, speed_limit:70 },
+  "JLN_01":  { name:"JLN-Ajmeri Gate",     lat:26.921500, lon:75.831500, end_lat:26.912000, end_lon:75.820000, blackspot:0, road_type:1, speed_limit:50 },
+  "JLN_05":  { name:"JLN-Airport Road",    lat:26.847000, lon:75.786000, end_lat:26.829000, end_lon:75.805000, blackspot:0, road_type:1, speed_limit:60 },
+  "DR_01":   { name:"Delhi Rd-Badi Chopad",lat:26.924500, lon:75.827000, end_lat:26.938000, end_lon:75.834000, blackspot:0, road_type:1, speed_limit:40 },
+  "DR_05":   { name:"Delhi Rd-Chandwaji",  lat:27.056000, lon:75.915000, end_lat:27.078000, end_lon:75.932000, blackspot:0, road_type:0, speed_limit:80 },
+  "AJR_01":  { name:"Ajmer Rd-22 Godam",  lat:26.924500, lon:75.818000, end_lat:26.916000, end_lon:75.805000, blackspot:0, road_type:1, speed_limit:40 },
+  "AJR_05":  { name:"Ajmer Rd-200Ft Byps",lat:26.893500, lon:75.748500, end_lat:26.890207, end_lon:75.738546, blackspot:1, road_type:0, speed_limit:80 },
+  "TR_01":   { name:"Tonk Rd-Ajmeri Gate",lat:26.921500, lon:75.831500, end_lat:26.912000, end_lon:75.820000, blackspot:0, road_type:1, speed_limit:40 },
+  "TR_05":   { name:"Tonk Rd-Chokhi Dhani",lat:26.774000,lon:75.828000, end_lat:26.750000, end_lon:75.825000, blackspot:0, road_type:2, speed_limit:70 },
+};
+
+let selectedDestSegment = null;
+
+function searchDestination(query) {
+  const box = document.getElementById("routeSuggestions");
+  if (!query || query.length < 2) { box.innerHTML = ""; return; }
+
+  const q = query.toLowerCase();
+  const matches = roadSegments.filter(function(s) {
+    return s.name.toLowerCase().includes(q);
+  });
+
+  if (matches.length === 0) {
+    box.innerHTML = '<div class="route-suggestion-item" style="color:var(--muted)">No matching road found</div>';
+    return;
+  }
+
+  box.innerHTML = matches.map(function(s) {
+    return '<div class="route-suggestion-item" onclick="selectDest(\'' + s.id + '\')">' +
+      '<i class="fa-solid fa-location-dot" style="color:var(--accent);margin-right:6px;"></i>' +
+      s.name + '</div>';
+  }).join("");
+}
+
+function selectDest(segId) {
+  selectedDestSegment = roadSegments.find(s => s.id === segId);
+  document.getElementById("routeDestInput").value = selectedDestSegment.name;
+  document.getElementById("routeSuggestions").innerHTML = "";
+}
+
 function checkRouteRisk() {
-  const fromId = document.getElementById("routeFrom").value;
-  const toId   = document.getElementById("routeTo").value;
+  if (!currentLat || !currentLon) {
+    showToast("GPS not detected yet. Wait for location.");
+    return;
+  }
+  if (!selectedDestSegment) {
+    showToast("Type and select a destination first.");
+    return;
+  }
+
   const result = document.getElementById("routeResult");
-
-  if (!fromId || !toId) { showToast("Select both start and end points"); return; }
-  if (fromId === toId)  { showToast("Start and end cannot be same"); return; }
-
-  const from = roadSegments.find(s => s.id === fromId);
-  const to   = roadSegments.find(s => s.id === toId);
-  if (!from || !to) { showToast("Segment not found"); return; }
-
   result.style.display = "block";
   result.style.cssText = "display:block;padding:10px;color:var(--muted);font-size:12px;";
   result.textContent = "Checking route risk...";
 
+  // From = current GPS location → nearest segment
+  const fromSeg = currentSegment || {
+    lat: currentLat, lon: currentLon,
+    end_lat: currentLat + 0.003, end_lon: currentLon + 0.003,
+    road_type: 1, speed_limit: 50, blackspot: 0, road_surface: 0
+  };
+  const toSeg = selectedDestSegment;
+
   const basePayload = {
     season: getSeason(), time_of_day: getTimeOfDay(),
-    weather_type: getWeatherType(currentWeatherCode||0, currentWindspeed||0),
+    weather_type: getWeatherType(currentWeatherCode || 0, currentWindspeed || 0),
     traffic_density: getTrafficDensity()
   };
 
   Promise.all([
-    fetch("/predict", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ ...basePayload, start_latitude:from.lat, start_longitude:from.lon,
-        end_latitude:from.end_lat||from.lat+.003, end_longitude:from.end_lon||from.lon+.003,
-        road_type:from.road_type, speed_limit:from.speed_limit,
-        blackspot_flag:from.blackspot, road_surface:from.road_surface })
-    }).then(r=>r.json()),
-    fetch("/predict", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ ...basePayload, start_latitude:to.lat, start_longitude:to.lon,
-        end_latitude:to.end_lat||to.lat+.003, end_longitude:to.end_lon||to.lon+.003,
-        road_type:to.road_type, speed_limit:to.speed_limit,
-        blackspot_flag:to.blackspot, road_surface:to.road_surface })
-    }).then(r=>r.json())
+    fetch("/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...basePayload,
+        start_latitude: fromSeg.lat, start_longitude: fromSeg.lon,
+        end_latitude: fromSeg.end_lat || fromSeg.lat + 0.003,
+        end_longitude: fromSeg.end_lon || fromSeg.lon + 0.003,
+        road_type: fromSeg.road_type, speed_limit: fromSeg.speed_limit || 60,
+        blackspot_flag: fromSeg.blackspot || 0, road_surface: fromSeg.road_surface || 0
+      })
+    }).then(r => r.json()),
+    fetch("/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...basePayload,
+        start_latitude: toSeg.lat, start_longitude: toSeg.lon,
+        end_latitude: toSeg.end_lat || toSeg.lat + 0.003,
+        end_longitude: toSeg.end_lon || toSeg.lon + 0.003,
+        road_type: toSeg.road_type, speed_limit: toSeg.speed_limit || 60,
+        blackspot_flag: toSeg.blackspot || 0, road_surface: toSeg.road_surface || 0
+      })
+    }).then(r => r.json())
   ])
   .then(function(res) {
     const r1 = res[0].risk, r2 = res[1].risk;
     const max = Math.max(r1, r2);
-    const labels = ["Low Risk","Medium Risk","High Risk"];
-    const bgs    = ["#dcfce7","#fef9c3","#fee2e2"];
-    const bords  = ["#86efac","#fcd34d","#fca5a5"];
-    const tcs    = ["#15803d","#92400e","#b91c1c"];
+    const labels  = ["Low Risk", "Medium Risk", "High Risk"];
+    const bgs     = ["#dcfce7", "#fef9c3", "#fee2e2"];
+    const borders = ["#86efac", "#fcd34d", "#fca5a5"];
+    const tcs     = ["#15803d", "#92400e", "#b91c1c"];
 
-    result.style.cssText = "display:block;padding:12px;border-radius:10px;border:2px solid "+bords[max]+";background:"+bgs[max]+";";
+    result.style.cssText = "display:block;padding:12px;border-radius:10px;border:2px solid " +
+      borders[max] + ";background:" + bgs[max] + ";";
     result.innerHTML =
-      '<div style="font-size:15px;font-weight:900;color:'+tcs[max]+';margin-bottom:6px;">'+labels[max]+' on Route</div>' +
+      '<div style="font-size:14px;font-weight:900;color:' + tcs[max] + ';margin-bottom:6px;">' +
+        labels[max] + ' on this Route</div>' +
       '<div style="font-size:12px;color:#374151;line-height:1.8;">' +
-        '<b>From:</b> '+from.name+' — '+labels[r1]+'<br>' +
-        '<b>To:</b> '+to.name+' — '+labels[r2] +
+        '<b>From:</b> Your location — ' + labels[r1] + '<br>' +
+        '<b>To:</b> ' + toSeg.name + ' — ' + labels[r2] +
       '</div>';
 
     speak("Route risk is " + labels[max] + ". Plan accordingly.");
   })
-  .catch(function() { result.textContent = "Could not check route."; });
+  .catch(function() {
+    result.textContent = "Could not check route. Is Flask running?";
+  });
+}
+// ── HISTORY TABLE ─────────────────────────────────────────────
+function addHistory(level, score) {
+  const body = document.getElementById("historyBody");
+  const now  = new Date();
+  const time = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
+  const weather = currentWeatherCode !== null ? decodeWeatherCode(currentWeatherCode) : "Unknown";
+  const cls = level.toLowerCase();
+
+  // Remove placeholder if present
+  const noData = body.querySelector(".no-data");
+  if (noData) noData.parentElement.remove();
+
+  const row = document.createElement("tr");
+  row.innerHTML =
+    "<td>" + time + "</td>" +
+    "<td>" + weather + "</td>" +
+    "<td>" + score + "</td>" +
+    "<td><span class='rbadge " + cls + "'>" + level + "</span></td>";
+
+  body.insertBefore(row, body.firstChild);
+
+  // Keep max 8 rows
+  while (body.children.length > 8) body.removeChild(body.lastChild);
 }
 
-// ── TIPS ──────────────────────────────────────────────────────
-const TIPS_POOL = [
-  { i:"fa-seatbelt",     t:"Always wear seatbelt before starting" },
-  { i:"fa-mobile",       t:"Never use phone while driving" },
-  { i:"fa-car",          t:"Maintain 3-second following distance" },
-  { i:"fa-cloud-rain",   t:"Reduce speed by 30% in rain or fog" },
-  { i:"fa-lightbulb",    t:"Use headlights in low visibility" },
-  { i:"fa-bed",          t:"Take breaks every 2 hours on long drives" },
-];
-
-function loadTips() {
-  const row = document.getElementById("tipsRow");
-  if (!row) return;
-  const shuffled = TIPS_POOL.slice().sort(() => Math.random()-.5).slice(0,3);
-  row.innerHTML = shuffled.map(function(tip) {
-    return '<div class="tip-chip"><i class="fa-solid '+tip.i+'"></i>'+tip.t+'</div>';
-  }).join("");
-}
-
-// ── HISTORY ───────────────────────────────────────────────────
-function saveHistory(risk, score) {
+function saveHistoryLS(risk, score) {
   const entry = {
     time:    new Date().toLocaleTimeString(),
-    weather: currentWeatherCode !== null ? decodeWeather(currentWeatherCode) : "--",
-    risk:    risk, score: score
+    weather: currentWeatherCode !== null ? decodeWeatherCode(currentWeatherCode) : "Unknown",
+    risk:    risk,
+    score:   score
   };
-  let h = JSON.parse(localStorage.getItem("re_history")||"[]");
-  h.unshift(entry);
-  if (h.length > 10) h = h.slice(0,10);
-  localStorage.setItem("re_history", JSON.stringify(h));
+  
 }
 
-// ── HELPERS ───────────────────────────────────────────────────
-function setEl(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val;
+// ── QUICK ACTIONS ─────────────────────────────────────────────
+
+
+function showRouteComing() {
+  showDashToast("🗺️ Route Risk feature coming in a future update!");
 }
 
+
+
+// ── TIPS ROTATION ─────────────────────────────────────────────
+const allTips = [
+  "🚗 Always wear your seatbelt before starting the engine.",
+  "📵 Never use your phone while driving.",
+  "👀 Keep a safe following distance at all times.",
+  "🌧️ Reduce speed in rain or foggy conditions.",
+  "💡 Keep headlights on during low visibility hours.",
+  "😴 Take a break every 2 hours on long drives.",
+  "⛽ Keep your fuel tank adequately filled.",
+  "🚦 Obey all traffic signals — even on empty roads.",
+  "🔧 Check tyre pressure and coolant regularly.",
+  "🌀 Watch for sudden weather changes in monsoon season.",
+];
+
+
+
+// ── STATUS BAR ────────────────────────────────────────────────
 function setStatus(msg, type) {
   const el = document.getElementById("gps-status");
   if (!el) return;
@@ -587,12 +562,22 @@ function setStatus(msg, type) {
   el.className = "gps-status " + type;
 }
 
-let _toastT;
-function showToast(msg) {
-  const t = document.getElementById("toast");
+// ── TOAST ─────────────────────────────────────────────────────
+let _toastTimer;
+function showDashToast(msg) {
+  const t = document.getElementById("dashToast");
   if (!t) return;
   t.textContent = msg;
   t.classList.remove("hidden");
-  clearTimeout(_toastT);
-  _toastT = setTimeout(() => t.classList.add("hidden"), 3500);
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() { t.classList.add("hidden"); }, 3500);
+}
+
+// ── MODALS ────────────────────────────────────────────────────
+function closeModal(id) {
+  document.getElementById(id).classList.add("hidden");
+}
+
+function confirmLogout() {
+  document.getElementById("logoutModal").classList.remove("hidden");
 }
