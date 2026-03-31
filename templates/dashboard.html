@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RoadEye – Dashboard</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <!-- Firebase CDN -->
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -281,7 +281,7 @@
     navigator.serviceWorker.register("/static/js/sw.js").catch(function(){});
   }
 </script>
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-<script src="{{ url_for('static', filename='js/firebase-init.js') }}"></script>
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='firebase-init.js') }}"></script>
 </body>
 </html>
