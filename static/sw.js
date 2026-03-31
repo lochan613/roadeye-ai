@@ -15,8 +15,8 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 const CACHE = "roadeye-v2";
-const ASSETS = ["/", "/dashboard", "/static/css/dashboard.css",
-  "/static/js/dashboard.js", "/static/css/secondary.css"];
+const ASSETS = ["/", "/dashboard", "/static/dashboard.css",
+  "/static/dashboard.js", "/static/secondary.css"];
 
 // ── Install ───────────────────────────────────────────────────
 self.addEventListener("install", function(e) {
