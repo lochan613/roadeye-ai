@@ -1,19 +1,28 @@
 from flask import Flask, render_template, redirect, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import joblib
 import pandas as pd
-import os  # ← NEW IMPORT
+import os
+import re
 
 app = Flask(__name__)
 
-# ← DATABASE CHANGES HERE (OLD sqlite line HATAO, YE NAYA ADD KARO)
+# DATABASE URL and settings
 DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///RoadEye.db')
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = "roadeye_secret_2026_xk9"
+
+# Secret key/config from environment (do not hardcode in production)
+app.secret_key = os.environ.get('SECRET_KEY', 'roadeye_secret_2026_xk9')
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production (HTTPS)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# Optional: configure permanent session lifetime and secure defaults.
 
 db = SQLAlchemy(app)
 
@@ -24,8 +33,17 @@ class User(db.Model):
     name       = db.Column(db.String(100), nullable=False)
     email      = db.Column(db.String(120), unique=True, nullable=False)
     password   = db.Column(db.String(200), nullable=False)
-    phone      = db.Column(db.String(15), nullable=True)  # ← NEW PHONE FIELD
+    phone      = db.Column(db.String(15), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+def is_valid_email(email: str) -> bool:
+    return bool(re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email))
+
+
+def is_valid_phone(phone: str) -> bool:
+    return phone.isdigit() and len(phone) == 10
+
 
 model = None
 try:
@@ -71,26 +89,32 @@ def signup():
         name     = request.form.get("name", "").strip()
         email    = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        phone    = request.form.get("phone", "").strip()  # ← NEW PHONE FIELD
+        phone    = request.form.get("phone", "").strip()
+
         if not name or not email or not password:
-            return render_template("signup.html", error="All fields are required.")
-        if len(password) < 6:
-            return render_template("signup.html", error="Password must be at least 6 characters.")
-        if phone and not phone.isdigit():
+            return render_template("signup.html", error="Name, email, and password are required.")
+        if not is_valid_email(email):
+            return render_template("signup.html", error="Invalid email format.")
+        if len(password) < 8:
+            return render_template("signup.html", error="Password must be at least 8 characters.")
+        if phone and not is_valid_phone(phone):
             return render_template("signup.html", error="Phone must be 10 digits only.")
+
         existing = User.query.filter_by(email=email).first()
         if existing:
             return render_template("signup.html", error="Email already registered. Please login.")
-        
-        # ← NEW USER CREATION (phone bhi add kiya)
-        new_user = User(name=name, email=email, password=password, phone=phone)
+
+        password_hash = generate_password_hash(password)
+        new_user = User(name=name, email=email, password=password_hash, phone=phone)
         db.session.add(new_user)
         db.session.commit()
+
         session["user_id"]    = new_user.id
         session["user_name"]  = new_user.name
         session["user_email"] = new_user.email
-        session.permanent     = False
+        session.permanent      = False
         return redirect("/dashboard")
+
     return render_template("signup.html")
 
 @app.route("/login", methods=["GET", "POST"])
@@ -101,56 +125,98 @@ def login():
         email    = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         if not email or not password:
-            return render_template("login.html", error="Please enter email and password.")
+            return render_template("login.html", error="Please enter both email and password.")
+        if not is_valid_email(email):
+            return render_template("login.html", error="Invalid email format.")
+
         user = User.query.filter_by(email=email).first()
-        if user and user.password == password:
+        if user and check_password_hash(user.password, password):
             session["user_id"]    = user.id
             session["user_name"]  = user.name
             session["user_email"] = user.email
-            session.permanent     = False
+            session.permanent      = False
             return redirect("/dashboard")
+
         return render_template("login.html", error="Invalid email or password.")
+
     return render_template("login.html")
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    if "user_id" not in session:
+        return jsonify({"error": "Authentication required"}), 401
+
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No data"}), 400
+        data = request.get_json(silent=True)
+        if not data or not isinstance(data, dict):
+            return jsonify({"error": "Invalid JSON body"}), 400
+
+        def get_int(name, default, minimum=None, maximum=None):
+            value = data.get(name, default)
+            try:
+                num = int(value)
+            except (TypeError, ValueError):
+                raise ValueError(f"{name} must be an integer")
+            if minimum is not None and num < minimum:
+                raise ValueError(f"{name} must be >= {minimum}")
+            if maximum is not None and num > maximum:
+                raise ValueError(f"{name} must be <= {maximum}")
+            return num
+
+        def get_float(name, default, minimum=None, maximum=None):
+            value = data.get(name, default)
+            try:
+                num = float(value)
+            except (TypeError, ValueError):
+                raise ValueError(f"{name} must be a number")
+            if minimum is not None and num < minimum:
+                raise ValueError(f"{name} must be >= {minimum}")
+            if maximum is not None and num > maximum:
+                raise ValueError(f"{name} must be <= {maximum}")
+            return num
+
+        features = {
+            "start_latitude":  get_float("start_latitude",  26.9124, -90, 90),
+            "start_longitude": get_float("start_longitude", 75.7873, -180, 180),
+            "end_latitude":    get_float("end_latitude",    26.9150, -90, 90),
+            "end_longitude":   get_float("end_longitude",   75.7930, -180, 180),
+            "road_type":       get_int("road_type",         1, 0, 10),
+            "speed_limit_est(inKm/h)": get_int("speed_limit", 60, 0, 260),
+            "blackspot_flag":  get_int("blackspot_flag",     0, 0, 1),
+            "road_surface":    get_int("road_surface",       0, 0, 10),
+            "season":          get_int("season",             1, 0, 3),
+            "time_of_day":     get_int("time_of_day",        2, 0, 23),
+            "weather_type":    get_int("weather_type",       0, 0, 20),
+            "traffic_density": get_int("traffic_density",    1, 0, 100),
+        }
+
         if model is not None:
-            features = pd.DataFrame([{
-                "start_latitude":          float(data.get("start_latitude",  26.9124)),
-                "start_longitude":         float(data.get("start_longitude", 75.7873)),
-                "end_latitude":            float(data.get("end_latitude",    26.9150)),
-                "end_longitude":           float(data.get("end_longitude",   75.7930)),
-                "road_type":               int(data.get("road_type",         1)),
-                "speed_limit_est(inKm/h)": int(data.get("speed_limit",       60)),
-                "blackspot_flag":          int(data.get("blackspot_flag",     0)),
-                "road_surface":            int(data.get("road_surface",       0)),
-                "season":                  int(data.get("season",             1)),
-                "time_of_day":             int(data.get("time_of_day",        2)),
-                "weather_type":            int(data.get("weather_type",       0)),
-                "traffic_density":         int(data.get("traffic_density",    1))
-            }])
-            risk    = int(model.predict(features)[0])
+            features_df = pd.DataFrame([features])
+            risk = int(model.predict(features_df)[0])
             ml_used = True
         else:
-            wt    = int(data.get("weather_type",  0))
-            bs    = int(data.get("blackspot_flag", 0))
-            tod   = int(data.get("time_of_day",    2))
-            rs    = int(data.get("road_surface",   0))
-            score = wt*15 + bs*25 + (15 if tod==0 else 5 if tod==1 else 0) + rs*8
-            risk    = 2 if score >= 50 else (1 if score >= 20 else 0)
+            wt = features["weather_type"]
+            bs = features["blackspot_flag"]
+            tod = features["time_of_day"]
+            rs = features["road_surface"]
+            score = wt*15 + bs*25 + (15 if tod <= 6 else 5 if tod <= 18 else 0) + rs*8
+            risk = 2 if score >= 50 else (1 if score >= 20 else 0)
             ml_used = False
+
         alerts = [
             "Low Risk — Conditions are safe. Stay alert.",
             "Medium Risk — Conditions not ideal. Drive carefully.",
             "High Risk — Dangerous conditions. Reduce speed immediately."
         ]
+
         return jsonify({"risk": risk, "alert": alerts[risk], "ml_used": ml_used})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+
+    except ValueError as err:
+        return jsonify({"error": str(err)}), 400
+    except Exception:
+        # avoid exposing internal details in production
+        return jsonify({"error": "Internal server error"}), 500
+
 
 if __name__ == "__main__":
     with app.app_context():
