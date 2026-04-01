@@ -41,7 +41,7 @@
       <div class="account-trigger" id="accountTrigger" onclick="toggleAccountMenu(event)">
         <div class="account-avatar" id="accountAvatar">D</div>
         <div class="account-info">
-          <span class="account-name" id="accountName">Driver</span>
+          <span class="account-name" id="accountName">{{ user_name }}</span>
           <span class="account-role">My Account</span>
         </div>
         <i class="fa-solid fa-chevron-down account-chevron" id="accountChevron"></i>
@@ -50,8 +50,8 @@
         <div class="dropdown-header">
           <div class="dropdown-avatar" id="dropAvatar">D</div>
           <div>
-            <div class="dropdown-name" id="dropName">Driver</div>
-            <div class="dropdown-email" id="dropEmail">--</div>
+            <div class="dropdown-name" id="dropName">{{ user_name }}</div>
+            <div class="dropdown-email" id="dropEmail">{{ user_email }}</div>
           </div>
         </div>
         <div class="dropdown-divider"></div>
@@ -266,10 +266,6 @@
 <div class="toast hidden" id="toast"></div>
 
 <script>
-  const _userName  = "lochan";
-  const _userEmail = "lochans433@gmail.com";
-  localStorage.setItem("re_userName",  _userName);
-  localStorage.setItem("re_userEmail", _userEmail);
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/static/sw.js").catch(function(){});
   }

@@ -43,7 +43,7 @@ function getNearestSegment(lat, lon) {
 
 // ── INIT ──────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", function() {
-  loadUser();
+  
   startClock();
   initTheme();
   initGPS();
@@ -52,15 +52,14 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 // ── USER ──────────────────────────────────────────────────────
-function loadUser() {
-  const name  = localStorage.getItem("re_userName")  || "Driver";
-  const email = localStorage.getItem("re_userEmail") || "";
-  setEl("accountName",   name);
-  setEl("accountAvatar", name.charAt(0).toUpperCase());
-  setEl("dropName",      name);
-  setEl("dropEmail",     email);
-  setEl("dropAvatar",    name.charAt(0).toUpperCase());
-}
+document.addEventListener("DOMContentLoaded", function() {
+  const name = document.getElementById("accountName")?.textContent;
+
+  if (name) {
+    document.getElementById("accountAvatar").textContent = name.charAt(0).toUpperCase();
+    document.getElementById("dropAvatar").textContent = name.charAt(0).toUpperCase();
+  }
+});
 
 // ── ACCOUNT DROPDOWN ──────────────────────────────────────────
 function toggleAccountMenu() {

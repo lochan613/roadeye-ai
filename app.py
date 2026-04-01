@@ -83,6 +83,8 @@ except Exception as e:
 
 @app.route("/")
 def home():
+    if "user_id" in session:
+        return redirect("/dashboard")
     return render_template("index.html")
 
 @app.route("/dashboard")
