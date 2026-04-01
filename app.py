@@ -20,7 +20,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Secret key/config from environment (do not hardcode in production)
 app.secret_key = os.environ.get('SECRET_KEY', 'roadeye_secret_2026_xk9')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = True  # Set True for production (HTTPS)
+if os.environ.get("ENV") == "production":
+    app.config['SESSION_COOKIE_SECURE'] = True
+else:
+    app.config['SESSION_COOKIE_SECURE'] = False  # Set True for production (HTTPS)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Optional: configure permanent session lifetime and secure defaults.
