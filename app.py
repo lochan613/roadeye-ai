@@ -50,10 +50,8 @@ def is_valid_phone(phone: str) -> bool:
 
 
 def generate_csrf_token():
-    if 'csrf_token' not in session:
-        session['csrf_token'] = secrets.token_hex(32)
+    session['csrf_token'] = secrets.token_hex(32)
     return session['csrf_token']
-
 
 def validate_csrf_token(token):
     return token and token == session.get('csrf_token')
@@ -119,7 +117,11 @@ def signup():
     if request.method == "POST":
         csrf_token = request.form.get('csrf_token')
         if not validate_csrf_token(csrf_token):
-            return render_template("signup.html", error="Invalid request.")
+            return render_template(
+    "signup.html",
+    error="Invalid request.",
+    csrf_token=generate_csrf_token()
+)
 
         name     = request.form.get("name", "").strip()
         email    = request.form.get("email", "").strip().lower()
