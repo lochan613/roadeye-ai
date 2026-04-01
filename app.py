@@ -20,7 +20,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Secret key/config from environment (do not hardcode in production)
 app.secret_key = os.environ.get('SECRET_KEY', 'roadeye_secret_2026_xk9')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = True  # Set True for production (HTTPS)
+if os.environ.get("ENV") == "production":
+    app.config['SESSION_COOKIE_SECURE'] = True
+else:
+    app.config['SESSION_COOKIE_SECURE'] = False  # Set True for production (HTTPS)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Optional: configure permanent session lifetime and secure defaults.
@@ -47,10 +50,8 @@ def is_valid_phone(phone: str) -> bool:
 
 
 def generate_csrf_token():
-    if 'csrf_token' not in session:
-        session['csrf_token'] = secrets.token_hex(32)
+    session['csrf_token'] = secrets.token_hex(32)
     return session['csrf_token']
-
 
 def validate_csrf_token(token):
     return token and token == session.get('csrf_token')
@@ -116,7 +117,11 @@ def signup():
     if request.method == "POST":
         csrf_token = request.form.get('csrf_token')
         if not validate_csrf_token(csrf_token):
-            return render_template("signup.html", error="Invalid request.")
+            return render_template(
+    "signup.html",
+    error="Invalid request.",
+    csrf_token=generate_csrf_token()
+)
 
         name     = request.form.get("name", "").strip()
         email    = request.form.get("email", "").strip().lower()
@@ -124,17 +129,37 @@ def signup():
         phone    = request.form.get("phone", "").strip()
 
         if not name or not email or not password:
-            return render_template("signup.html", error="Name, email, and password are required.")
+            return render_template(
+        "signup.html",
+        error="Name, email, and password are required.",
+        csrf_token=generate_csrf_token()
+    )
         if not is_valid_email(email):
-            return render_template("signup.html", error="Invalid email format.")
+            return render_template(
+    "signup.html",
+    error="Invalid email format.",
+    csrf_token=generate_csrf_token()
+)
         if len(password) < 8:
-            return render_template("signup.html", error="Password must be at least 8 characters.")
+            return render_template(
+    "signup.html",
+    error="Password must be at least 8 characters.",
+    csrf_token=generate_csrf_token()
+)
         if phone and not is_valid_phone(phone):
-            return render_template("signup.html", error="Phone must be 10 digits only.")
+            return render_template(
+    "signup.html",
+    error="Phone must be 10 digits only.",
+    csrf_token=generate_csrf_token()
+)
 
         existing = User.query.filter_by(email=email).first()
         if existing:
-            return render_template("signup.html", error="Email already registered. Please login.")
+            return render_template(
+                "signup.html",
+                error="Email already registered. Please login.",
+                csrf_token=generate_csrf_token()
+    )
 
         password_hash = generate_password_hash(password)
         new_user = User(name=name, email=email, password=password_hash, phone=phone)

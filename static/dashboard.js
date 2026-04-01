@@ -1,538 +1,655 @@
-// ─── DATA ────────────────────────────────────────────────────
+/* ============================================================
+   RoadEye — dashboard.js  (Complete)
+   ============================================================ */
 
-const ALL_TIPS = [
-  "Always wear your seatbelt before starting the engine.",
-  "Never use your phone while driving.",
-  "Keep a safe following distance at all times.",
-  "Reduce speed in rain or foggy conditions.",
-  "Keep headlights on during low visibility hours.",
-  "Take a break every 2 hours on long drives.",
-  "Keep your fuel tank adequately filled.",
-  "Obey all traffic signals — even on empty roads.",
-  "Check tyre pressure and coolant regularly.",
-  "Watch for sudden weather changes in monsoon season.",
+// ── STATE ─────────────────────────────────────────────────────
+let isDriving          = false;
+let voiceEnabled       = true;
+let currentWeatherCode = null;
+let currentWindspeed   = null;
+let currentLat         = null;
+let currentLon         = null;
+let currentSegment     = null;
+
+// ── ROAD SEGMENTS ─────────────────────────────────────────────
+const roadSegments = [
+  { id:"NH48_01", name:"NH-48 Aspura",         lat:27.4548, lon:76.0302, end_lat:27.4562, end_lon:76.0332, blackspot:1, road_type:0, speed_limit:90, road_surface:2 },
+  { id:"NH48_02", name:"NH-48 Civil Lines",    lat:26.9043, lon:75.7932, end_lat:26.9088, end_lon:75.7795, blackspot:0, road_type:0, speed_limit:90, road_surface:1 },
+  { id:"NH48_03", name:"NH-48 Sodala",         lat:26.9088, lon:75.7795, end_lat:26.8998, end_lon:75.7592, blackspot:1, road_type:0, speed_limit:90, road_surface:1 },
+  { id:"NH48_04", name:"NH-48 DCM Bypass",     lat:26.8998, lon:75.7592, end_lat:26.8902, end_lon:75.7385, blackspot:1, road_type:0, speed_limit:90, road_surface:2 },
+  { id:"NH48_05", name:"NH-48 Bhankrotan",     lat:26.8902, lon:75.7385, end_lat:26.8795, end_lon:75.7150, blackspot:1, road_type:0, speed_limit:90, road_surface:1 },
+  { id:"NH48_06", name:"NH-48 Mahapura",       lat:26.8795, lon:75.7150, end_lat:26.8642, end_lon:75.6845, blackspot:1, road_type:0, speed_limit:90, road_surface:2 },
+  { id:"AR_01",   name:"Agra Rd Transport Ngr",lat:26.9055, lon:75.8455, end_lat:26.9100, end_lon:75.8600, blackspot:1, road_type:2, speed_limit:70, road_surface:2 },
+  { id:"AR_05",   name:"Agra Rd Ring Road",    lat:26.8610, lon:75.9550, end_lat:26.8550, end_lon:76.0100, blackspot:1, road_type:2, speed_limit:70, road_surface:2 },
+  { id:"DR_02",   name:"Delhi Rd Jal Mahal",   lat:26.9535, lon:75.8450, end_lat:26.9870, end_lon:75.8570, blackspot:1, road_type:2, speed_limit:60, road_surface:1 },
+  { id:"DR_04",   name:"Delhi Rd Kukas",       lat:27.0400, lon:75.8950, end_lat:27.0780, end_lon:75.9320, blackspot:0, road_type:2, speed_limit:80, road_surface:1 },
+  { id:"JLN_01",  name:"JLN Marg Ajmeri Gate", lat:26.9215, lon:75.8315, end_lat:26.9120, end_lon:75.8200, blackspot:0, road_type:1, speed_limit:50, road_surface:0 },
+  { id:"JLN_05",  name:"JLN Marg Airport Rd",  lat:26.8700, lon:75.7930, end_lat:26.8470, end_lon:75.7860, blackspot:0, road_type:1, speed_limit:60, road_surface:0 },
+  { id:"AJR_03",  name:"Ajmer Rd Sodala",      lat:26.9055, lon:75.7695, end_lat:26.8935, end_lon:75.7592, blackspot:1, road_type:1, speed_limit:40, road_surface:1 },
+  { id:"AJR_05",  name:"Ajmer Rd 200 Ft",      lat:26.8935, lon:75.7592, end_lat:26.8902, end_lon:75.7385, blackspot:1, road_type:0, speed_limit:80, road_surface:2 },
+  { id:"GB_04",   name:"Gopalpura Gujar Thadi", lat:26.8825, lon:75.7535, end_lat:26.8920, end_lon:75.7440, blackspot:1, road_type:1, speed_limit:50, road_surface:1 },
+  { id:"TR_05",   name:"Tonk Rd Chokhi Dhani", lat:26.7740, lon:75.8280, end_lat:26.7500, end_lon:75.8250, blackspot:0, road_type:2, speed_limit:70, road_surface:1 },
+  { id:"KLR_02",  name:"Kalwar Rd Hathoj",     lat:26.9900, lon:75.7550, end_lat:27.0100, end_lon:75.7400, blackspot:0, road_type:2, speed_limit:60, road_surface:2 },
 ];
 
-const DESTINATIONS = [
-  { id: "NH48_01", name: "NH-48 Aspura", blackspot: true },
-  { id: "NH48_02", name: "Civil Lines", blackspot: false },
-  { id: "NH48_06", name: "NH-48 Mahapura", blackspot: true },
-  { id: "GB_01",   name: "Gopalpura-Tonk Road", blackspot: false },
-  { id: "GB_05",   name: "Gopalpura-Heerapura", blackspot: true },
-  { id: "AR_01",   name: "Agra Rd-Transport Nagar", blackspot: true },
-  { id: "AR_05",   name: "Agra Rd-Kanota", blackspot: true },
-  { id: "JLN_01",  name: "JLN-Ajmeri Gate", blackspot: false },
-  { id: "JLN_05",  name: "JLN-Airport Road", blackspot: false },
-  { id: "DR_01",   name: "Delhi Rd-Badi Chopad", blackspot: false },
-  { id: "DR_05",   name: "Delhi Rd-Chandwaji", blackspot: false },
-  { id: "AJR_01",  name: "Ajmer Rd-22 Godam", blackspot: false },
-  { id: "AJR_05",  name: "Ajmer Rd-200Ft Bypass", blackspot: true },
-  { id: "TR_01",   name: "Tonk Rd-Ajmeri Gate", blackspot: false },
-  { id: "TR_05",   name: "Tonk Rd-Chokhi Dhani", blackspot: false },
-];
-
-// ─── HELPERS ─────────────────────────────────────────────────
-
-function getRiskAdvisory(level, isDriving) {
-  if (!isDriving) return [{ text: "Enable driving mode to get live advisory", type: "neutral" }];
-  if (level === "waiting") return [{ text: "Click 'Check Risk' to get live advisory", type: "neutral" }];
-  if (level === "high") return [
-    { text: "⚠️ STOP if possible — dangerous road conditions detected!", type: "danger" },
-    { text: "🚨 SLOW DOWN immediately — high risk environment", type: "danger" },
-    { text: "💡 Turn on hazard lights and increase caution.", type: "warn" },
-    { text: "📞 Keep emergency contacts reachable.", type: "warn" },
-  ];
-  if (level === "medium") return [
-    { text: "⚡ Stay focused — conditions are not ideal.", type: "warn" },
-    { text: "🚗 Maintain safe following distance — at least 3 seconds.", type: "warn" },
-    { text: "🌦️ Reduce speed in uncertain areas.", type: "warn" },
-    { text: "✅ You're driving — stay alert and aware.", type: "ok" },
-  ];
-  return [
-    { text: "✅ Conditions look good. Drive safely!", type: "ok" },
-    { text: "🚗 Maintain safe speed and following distance.", type: "ok" },
-    { text: "👀 Stay alert — situations can change quickly.", type: "ok" },
-  ];
+function getNearestSegment(lat, lon) {
+  let nearest = null, minDist = Infinity;
+  roadSegments.forEach(function(s) {
+    const d = Math.sqrt(Math.pow(lat-s.lat,2)+Math.pow(lon-s.lon,2));
+    if (d < minDist) { minDist = d; nearest = s; }
+  });
+  return nearest;
 }
 
-function getRiskIndicators(level) {
-  if (level === "low")    return { visibility: 88, traffic: 30, road: 85, weather: 90 };
-  if (level === "medium") return { visibility: 52, traffic: 65, road: 60, weather: 45 };
-  if (level === "high")   return { visibility: 22, traffic: 88, road: 28, weather: 15 };
-  return { visibility: 0, traffic: 0, road: 0, weather: 0 };
+// ── INIT ──────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", function() {
+  loadUser();
+  startClock();
+  initTheme();
+  initGPS();
+  loadTips();
+  closeDropdownOnOutsideClick();
+});
+
+// ── USER ──────────────────────────────────────────────────────
+function loadUser() {
+  const name  = localStorage.getItem("re_userName")  || "Driver";
+  const email = localStorage.getItem("re_userEmail") || "";
+  setEl("accountName",   name);
+  setEl("accountAvatar", name.charAt(0).toUpperCase());
+  setEl("dropName",      name);
+  setEl("dropEmail",     email);
+  setEl("dropAvatar",    name.charAt(0).toUpperCase());
 }
 
-function barColor(pct) {
-  if (pct > 60) return "#16a34a";
-  if (pct > 35) return "#d97706";
-  return "#dc2626";
+// ── ACCOUNT DROPDOWN ──────────────────────────────────────────
+function toggleAccountMenu() {
+  const dd  = document.getElementById("accountDropdown");
+  const chv = document.getElementById("accountChevron");
+  const isOpen = dd.classList.contains("open");
+  dd.classList.toggle("open", !isOpen);
+  chv.classList.toggle("open", !isOpen);
 }
 
-// ─── STATE ───────────────────────────────────────────────────
-
-const state = {
-  isDark: false,
-  isDriving: false,
-  voiceEnabled: true,
-  accountOpen: false,
-  riskLevel: "waiting",
-  riskScore: 0,
-  isChecking: false,
-  timeStr: "",
-  tips: ALL_TIPS.slice(0, 3),
-  tipIndex: 0,
-  routeDestInput: "",
-  routeSuggestions: [],
-  selectedDest: null,
-  routeResult: null,
-  toast: "",
-  showToast: false,
-  toastTimer: null,
-};
-
-// ─── FUNCTIONS ───────────────────────────────────────────────
-
-function toggleDriving() {
-  state.isDriving = !state.isDriving;
-  if (!state.isDriving) {
-    state.riskLevel = "waiting";
-    state.riskScore = 0;
-  }
-  fireToast(state.isDriving ? "🚗 Driving Mode Activated — Risk monitoring enabled" : "⏸ Driving Mode Off");
-  render();
-}
-
-function fireToast(msg) {
-  state.toast = msg;
-  state.showToast = true;
-  if (state.toastTimer) clearTimeout(state.toastTimer);
-  state.toastTimer = setTimeout(() => {
-    state.showToast = false;
-    render();
-  }, 3500);
-  render();
-}
-
-function predictRisk() {
-  if (!state.isDriving) return;
-  state.isChecking = true;
-  render();
-  setTimeout(() => {
-    const hour = new Date().getHours();
-    let score = 5;
-    if (hour >= 22 || hour <= 5) score += 28;
-    else if (hour >= 19) score += 15;
-    else if (hour <= 8) score += 10;
-    score = Math.min(100, score + Math.floor(Math.random() * 15));
-    let level = score >= 65 ? "high" : score >= 35 ? "medium" : "low";
-    state.riskScore = score;
-    state.riskLevel = level;
-    state.isChecking = false;
-    const labels = { low: "✅ LOW RISK", medium: "⚡ MEDIUM RISK", high: "🚨 HIGH RISK" };
-    fireToast(`${labels[level]} detected (Score: ${score}/100)`);
-    render();
-  }, 1600);
-}
-
-function simulateRisk(level) {
-  const scores = { low: 22, medium: 55, high: 78 };
-  state.riskLevel = level;
-  state.riskScore = scores[level];
-  const labels = { low: "✅ LOW RISK", medium: "⚡ MEDIUM RISK", high: "🚨 HIGH RISK" };
-  fireToast(`Demo: ${labels[level]} simulated`);
-  render();
-}
-
-function searchDestination(q) {
-  state.routeDestInput = q;
-  state.selectedDest = null;
-  state.routeResult = null;
-  if (!q || q.length < 2) {
-    state.routeSuggestions = [];
-    render();
-    return;
-  }
-  const matches = DESTINATIONS.filter(d => d.name.toLowerCase().includes(q.toLowerCase()));
-  state.routeSuggestions = matches;
-  render();
-}
-
-function selectDest(dest) {
-  state.selectedDest = dest;
-  state.routeDestInput = dest.name;
-  state.routeSuggestions = [];
-  render();
-}
-
-function checkRouteRisk() {
-  if (!state.selectedDest) {
-    fireToast("⚠️ Type and select a destination first.");
-    return;
-  }
-  const fromLevel = "low";
-  const destLevel = state.selectedDest.blackspot ? "high" : "low";
-  const overallLevel = destLevel === "high" ? "high" : fromLevel === "medium" ? "medium" : "low";
-  state.routeResult = {
-    level: overallLevel,
-    fromLabel: "Your Location (Jaipur)",
-    toLabel: state.selectedDest.name,
-    fromLevel,
-    toLevel: destLevel,
-  };
-  render();
-}
-
-function toggleAccount() {
-  state.accountOpen = !state.accountOpen;
-  render();
-}
-
-function toggleDark() {
-  state.isDark = !state.isDark;
-  state.accountOpen = false;
-  render();
-}
-
-function toggleVoice() {
-  state.voiceEnabled = !state.voiceEnabled;
-  state.accountOpen = false;
-  fireToast(state.voiceEnabled ? "🔇 Voice alerts disabled" : "🔊 Voice alerts enabled");
-  render();
-}
-
-function closeAccount() {
-  state.accountOpen = false;
-  render();
-}
-
-// ─── RENDER ──────────────────────────────────────────────────
-
-function render() {
-  const T = {
-    bg: state.isDark ? "#0d1117" : "#f0f4ff",
-    card: state.isDark ? "#161b27" : "#ffffff",
-    border: state.isDark ? "#2a3550" : "#e2e8f0",
-    text: state.isDark ? "#e2e8f0" : "#0f172a",
-    muted: state.isDark ? "#8fb3c8" : "#64748b",
-    inputBg: state.isDark ? "#0d1117" : "#f0f4ff",
-  };
-
-  const advisory = getRiskAdvisory(state.riskLevel, state.isDriving);
-  const indicators = getRiskIndicators(state.riskLevel);
-
-  const riskConfig = {
-    waiting: { bg: T.bg, border: T.border, iconColor: T.muted, textColor: T.muted, label: "Waiting", sub: "Toggle driving mode and click Check Risk" },
-    low:     { bg: state.isDark ? "#14291e" : "#dcfce7", border: state.isDark ? "#4ade80" : "#86efac", iconColor: "#16a34a", textColor: state.isDark ? "#4ade80" : "#15803d", label: "LOW RISK", sub: "Conditions are relatively safe — stay alert" },
-    medium:  { bg: state.isDark ? "#2a1f08" : "#fef9c3", border: state.isDark ? "#fbbf24" : "#fcd34d", iconColor: "#ca8a04", textColor: state.isDark ? "#fbbf24" : "#92400e", label: "MEDIUM RISK", sub: "Stay focused — do not drive recklessly" },
-    high:    { bg: state.isDark ? "#2a1010" : "#fee2e2", border: state.isDark ? "#f87171" : "#fca5a5", iconColor: "#dc2626", textColor: state.isDark ? "#f87171" : "#b91c1c", label: "HIGH RISK", sub: "Exercise extreme caution — dangerous conditions" },
-  };
-  const rc = riskConfig[state.riskLevel];
-
-  const routeLevelConfig = {
-    low:    { bg: "#dcfce7", border: "#86efac", color: "#15803d", label: "Low Risk" },
-    medium: { bg: "#fef9c3", border: "#fcd34d", color: "#92400e", label: "Medium Risk" },
-    high:   { bg: "#fee2e2", border: "#fca5a5", color: "#b91c1c", label: "High Risk" },
-  };
-
-  const advTypeStyle = (type) => {
-    if (type === "ok")      return { bg: state.isDark ? "#14291e" : "#dcfce7", border: state.isDark ? "#4ade80" : "#86efac", color: state.isDark ? "#4ade80" : "#15803d" };
-    if (type === "warn")    return { bg: state.isDark ? "#2a1f08" : "#fef9c3", border: state.isDark ? "#fbbf24" : "#fcd34d", color: state.isDark ? "#fbbf24" : "#92400e" };
-    if (type === "danger")  return { bg: state.isDark ? "#2a1010" : "#fee2e2", border: state.isDark ? "#f87171" : "#fca5a5", color: state.isDark ? "#f87171" : "#b91c1c" };
-    return { bg: T.bg, border: T.border, color: T.muted };
-  };
-
-  const cardStyle = `background: ${T.card}; border: 1px solid ${T.border}; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 14px; box-shadow: ${state.isDark ? "0 1px 12px rgba(0,0,0,0.4)" : "0 1px 12px rgba(37,99,235,0.08)"};`;
-
-  const cardTitleStyle = `display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: ${T.text}; padding-bottom: 12px; border-bottom: 1px solid ${T.border};`;
-
-  const envItems = [
-    { icon: "🛰️", bg: "#dbeafe", label: "Location", val: "26.91250, 75.78730" },
-    { icon: "🏢", bg: "#ede9fe", label: "City", val: "Jaipur, Rajasthan" },
-    { icon: "🌡️", bg: "#fee2e2", label: "Temperature", val: "32 °C" },
-    { icon: "⛅", bg: "#fef3c7", label: "Weather", val: "Clear Sky ☀️" },
-    { icon: "💧", bg: "#cffafe", label: "Humidity", val: "45%" },
-    { icon: "💨", bg: "#dcfce7", label: "Wind", val: "12 km/h" },
-    { icon: "🕒", bg: "#f0fdf4", label: "Time", val: state.timeStr || "--:--:--" },
-    { icon: "⚠️", bg: "#fef9c3", label: "Nearest Zone", val: "✅ Safe Zone" },
-  ].map(item => `
-    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: ${T.bg}; border-radius: 10px; border: 1px solid ${T.border};">
-      <div style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: ${item.bg}; flex-shrink: 0; filter: ${state.isDark ? "brightness(0.7)" : "none"};">
-        ${item.icon}
-      </div>
-      <div>
-        <div style="font-size: 10px; color: ${T.muted}; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;">${item.label}</div>
-        <div style="font-size: 12px; font-weight: 700; color: ${T.text}; margin-top: 2px;">${item.val}</div>
-      </div>
-    </div>
-  `).join('');
-
-  const advisoryItems = advisory.map((item, i) => {
-    const s = advTypeStyle(item.type);
-    const icon = item.type === "ok" ? "✅" : item.type === "warn" ? "⚠️" : item.type === "danger" ? "❌" : "ℹ️";
-    return `
-      <li style="display: flex; align-items: flex-start; gap: 9px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; line-height: 1.4; background: ${s.bg}; color: ${s.color}; border: 1px solid ${s.border};">
-        ${icon}
-        ${item.text}
-      </li>
-    `;
-  }).join('');
-
-  const tipsItems = state.tips.slice(0, 3).map(tip => `
-    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: ${T.bg}; border-radius: 8px; font-size: 12px; font-weight: 600; color: ${T.text}; border-left: 3px solid #2563eb;">
-      ${tip}
-    </div>
-  `).join('');
-
-  const indicatorsItems = [
-    { name: "Visibility", val: indicators.visibility },
-    { name: "Traffic", val: indicators.traffic },
-    { name: "Road Condition", val: indicators.road },
-    { name: "Weather Safety", val: indicators.weather },
-  ].map(ind => `
-    <div style="display: flex; flex-direction: column; gap: 5px;">
-      <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;">
-        <span style="color: ${T.muted};">${ind.name}</span>
-        <span style="color: ${T.text};">${state.riskLevel === "waiting" ? "--" : `${ind.val}%`}</span>
-      </div>
-      <div style="height: 8px; background: ${T.border}; border-radius: 20px; overflow: hidden;">
-        <div style="height: 100%; width: ${state.riskLevel === "waiting" ? "0%" : `${ind.val}%`}; background: ${barColor(ind.val)}; border-radius: 20px; transition: width .9s ease, background .4s;"></div>
-      </div>
-    </div>
-  `).join('');
-
-  const suggestions = state.routeSuggestions.map(s => `
-    <div onclick="selectDest(${JSON.stringify(s).replace(/"/g, '&quot;')})" style="padding: 8px 12px; font-size: 12px; font-weight: 600; color: ${T.text}; cursor: pointer; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid ${T.border};">
-      📍 ${s.name}
-      ${s.blackspot ? '<span style="margin-left: auto; font-size: 10px; color: #dc2626; font-weight: 700;">⚠️ Blackspot</span>' : ''}
-    </div>
-  `).join('');
-
-  const routeResultHtml = state.routeResult ? (() => {
-    const cfg = routeLevelConfig[state.routeResult.level];
-    const fromCfg = routeLevelConfig[state.routeResult.fromLevel];
-    const toCfg = routeLevelConfig[state.routeResult.toLevel];
-    return `
-      <div style="border-radius: 10px; padding: 12px; border: 2px solid ${cfg.border}; background: ${cfg.bg};">
-        <div style="font-size: 14px; font-weight: 900; color: ${cfg.color}; margin-bottom: 6px;">${cfg.label} on this Route</div>
-        <div style="font-size: 12px; color: #374151; line-height: 1.8;">
-          <span style="font-weight: 700;">From:</span> ${state.routeResult.fromLabel} — <span style="color: ${fromCfg.color}; font-weight: 700;">${fromCfg.label}</span><br />
-          <span style="font-weight: 700;">To:</span> ${state.routeResult.toLabel} — <span style="color: ${toCfg.color}; font-weight: 700;">${toCfg.label}</span>
-        </div>
-      </div>
-    `;
-  })() : '';
-
-  const html = `
-    <div style="background: ${T.bg}; color: ${T.text}; min-height: 100vh; font-family: 'Segoe UI', system-ui, sans-serif; transition: background .3s, color .3s;">
-      <header style="height: 60px; background: linear-gradient(135deg, #1e3a8a, #2563eb); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; z-index: 300; box-shadow: 0 2px 16px rgba(37,99,235,0.35);">
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <div style="display: flex; align-items: center; gap: 9px; font-size: 20px; font-weight: 900; color: #fff; letter-spacing: -0.3px;">
-            👁️
-            <span>RoadEye</span>
-          </div>
-          <span style="font-size: 12px; color: rgba(255,255,255,0.65); font-weight: 500;">Driver Safety Monitor</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div onclick="toggleDriving()" style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 30px; padding: 5px 14px 5px 10px; cursor: pointer;">
-            <span style="font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap;">${state.isDriving ? "Driving" : "Not Driving"}</span>
-            <div style="width: 36px; height: 20px; background: ${state.isDriving ? "#22c55e" : "rgba(255,255,255,0.25)"}; border-radius: 20px; position: relative; cursor: pointer; transition: background .3s; flex-shrink: 0;">
-              <div style="position: absolute; width: 14px; height: 14px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: transform .3s; transform: ${state.isDriving ? "translateX(16px)" : "translateX(0)"}; box-shadow: 0 1px 4px rgba(0,0,0,0.2);"></div>
-            </div>
-          </div>
-          <a href="/safety-insights" style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 7px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none;">📊 Insights</a>
-          <div class="account-dropdown" style="position: relative;">
-            <div onclick="toggleAccount()" style="display: flex; align-items: center; gap: 9px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 12px; padding: 6px 12px 6px 8px; cursor: pointer;">
-              <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #fff; flex-shrink: 0;">A</div>
-              <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 13px; font-weight: 700; color: #fff; line-height: 1.2;">Driver</span>
-                <span style="font-size: 10px; color: rgba(255,255,255,0.65);">My Account</span>
-              </div>
-              <span style="transition: transform .2s; transform: ${state.accountOpen ? "rotate(180deg)" : "rotate(0deg)"};">▼</span>
-            </div>
-            ${state.accountOpen ? `
-              <div style="position: absolute; top: calc(100% + 8px); right: 0; background: ${T.card}; border: 1px solid ${T.border}; border-radius: 16px; min-width: 230px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); z-index: 400; overflow: hidden;">
-                <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: ${state.isDark ? "rgba(37,99,235,0.1)" : "linear-gradient(135deg,rgba(37,99,235,0.08),rgba(124,58,237,0.08))"};">
-                  <div style="width: 42px; height: 42px; background: linear-gradient(135deg,#2563eb,#7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #fff;">A</div>
-                  <div>
-                    <div style="font-size: 15px; font-weight: 800; color: ${T.text}">Driver</div>
-                    <div style="font-size: 11px; color: ${T.muted}; margin-top: 2px;">driver@roadeye.app</div>
-                  </div>
-                </div>
-                <div style="height: 1px; background: ${T.border};"></div>
-                <a onclick="closeAccount()" href="/safety-insights" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; color: ${T.text}; text-decoration: none;">📊 Safety Insights</a>
-                <div onclick="toggleDark()" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; color: ${T.text}; cursor: pointer;">
-                  ${state.isDark ? "☀️" : "🌙"}
-                  <span>${state.isDark ? "Light Mode" : "Dark Mode"}</span>
-                </div>
-                <div onclick="toggleVoice()" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; color: ${T.text}; cursor: pointer;">
-                  ${state.voiceEnabled ? "🔊" : "🔇"}
-                  <span>${state.voiceEnabled ? "Voice On" : "Voice Off"}</span>
-                </div>
-                <div style="height: 1px; background: ${T.border};"></div>
-                <a onclick="closeAccount()" href="/" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; color: #dc2626; text-decoration: none;">🚪 Logout</a>
-              </div>
-            ` : ''}
-          </div>
-        </div>
-      </header>
-      ${state.isDriving ? `
-        <div style="background: linear-gradient(90deg,#16a34a,#15803d); color: #fff; padding: 10px 24px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600;">
-          🚗
-          <span>Driving Mode Active — Risk monitoring enabled</span>
-          <div style="width: 8px; height: 8px; background: #fff; border-radius: 50%; margin-left: auto; animation: pulse-anim 1.8s infinite;"></div>
-        </div>
-      ` : `
-        <div style="background: ${T.card}; border-bottom: 1px solid ${T.border}; padding: 10px 24px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: ${T.muted};">
-          ℹ️
-          <span>Toggle <strong style="color: ${T.text};">"Driving"</strong> in the header to enable risk prediction</span>
-        </div>
-      `}
-      <div class="dashboard-grid" style="display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr; gap: 16px; padding: 20px 22px; max-width: 1480px; margin: 0 auto;">
-        <div style="${cardStyle}">
-          <div style="${cardTitleStyle}">
-            🛰️
-            <span>Current Environment</span>
-            <div style="margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #16a34a; background: rgba(22,163,74,0.1); padding: 3px 10px; border-radius: 20px;">
-              <span style="width: 6px; height: 6px; background: #16a34a; border-radius: 50%; display: inline-block; animation: pulse-anim 1.8s infinite;"></span>
-              Live
-            </div>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            ${envItems}
-          </div>
-          <div style="padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; background: rgba(37,99,235,.1); color: #2563eb; border: 1px solid rgba(37,99,235,.25);">
-            📍 GPS acquired (±35m) — Live weather loaded successfully
-          </div>
-        </div>
-        <div style="${cardStyle}">
-          <div style="${cardTitleStyle}">
-            🧠
-            <span>Risk Prediction</span>
-          </div>
-          <div style="border-radius: 14px; padding: 22px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: all .4s; border: 2px solid ${rc.border}; background: ${rc.bg};">
-            <div style="font-size: 36px; line-height: 1;">
-              ${state.riskLevel === "waiting" ? "🛡️" : state.riskLevel === "low" ? "🛡️" : state.riskLevel === "medium" ? "⚡" : "⚠️"}
-            </div>
-            ${state.riskLevel !== "waiting" ? `
-              <div style="font-size: 11px; font-weight: 700; color: ${rc.iconColor}; background: ${state.riskLevel === "low" ? "rgba(22,163,74,0.15)" : state.riskLevel === "medium" ? "rgba(202,138,4,0.15)" : "rgba(220,38,38,0.15)"}; padding: 2px 10px; border-radius: 20px;">
-                Score: ${state.riskScore}/100
-              </div>
-            ` : ''}
-            <div style="font-size: 22px; font-weight: 900; color: ${rc.textColor};">${rc.label}</div>
-            <div style="font-size: 12px; color: ${T.muted}; line-height: 1.5;">${rc.sub}</div>
-          </div>
-          <button onclick="predictRisk()" ${!state.isDriving || state.isChecking ? 'disabled' : ''} style="width: 100%; padding: 13px; background: ${!state.isDriving || state.isChecking ? "rgba(37,99,235,0.4)" : "linear-gradient(135deg,#2563eb,#7c3aed)"}; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: ${!state.isDriving || state.isChecking ? "not-allowed" : "pointer"}; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; transition: opacity .2s; opacity: ${!state.isDriving || state.isChecking ? 0.55 : 1};">
-            📏
-            ${state.isChecking ? "Analysing..." : "Check Risk"}
-          </button>
-          <div style="display: flex; align-items: center; gap: 7px; padding: 8px 10px; background: ${T.bg}; border-radius: 10px; border: 1px dashed ${T.border};">
-            <span style="font-size: 11px; font-weight: 700; color: ${T.muted}; flex: 1;">Demo</span>
-            <button onclick="simulateRisk('high')" style="padding: 4px 12px; border: none; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; background: #fee2e2; color: #b91c1c; text-transform: capitalize;">High</button>
-            <button onclick="simulateRisk('medium')" style="padding: 4px 12px; border: none; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; background: #fef9c3; color: #92400e; text-transform: capitalize;">Medium</button>
-            <button onclick="simulateRisk('low')" style="padding: 4px 12px; border: none; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; background: #dcfce7; color: #15803d; text-transform: capitalize;">Low</button>
-          </div>
-          <div style="display: flex; gap: 7px; font-size: 11px; color: ${T.muted}; background: ${T.bg}; padding: 8px 10px; border-radius: 8px; line-height: 1.5;">
-            ℹ️
-            Medium risk = drive carefully, not that an accident will happen.
-          </div>
-        </div>
-        <div style="${cardStyle}">
-          <div style="${cardTitleStyle}">
-            🔔
-            <span>Driver Advisory</span>
-          </div>
-          <ul style="list-style: none; display: flex; flex-direction: column; gap: 7px;">
-            ${advisoryItems}
-          </ul>
-          <div style="margin-top: 4px;">
-            <div style="font-size: 12px; font-weight: 700; color: ${T.muted}; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px;">Quick Tips</div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              ${tipsItems}
-            </div>
-          </div>
-        </div>
-        <div style="${cardStyle}">
-          <div style="${cardTitleStyle}">
-            📊
-            <span>Safety Indicators</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            ${indicatorsItems}
-          </div>
-          <div style="border-top: 1px solid ${T.border}; padding-top: 14px; display: flex; flex-direction: column; gap: 8px;">
-            <div style="font-size: 13px; font-weight: 700; color: ${T.text}; display: flex; align-items: center; gap: 7px;">
-              🛣️ Route Risk
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: rgba(22,163,74,0.1); border: 1px solid rgba(22,163,74,0.3); border-radius: 9px; font-size: 12px; font-weight: 600; color: ${T.text};">
-              📍
-              <span>Your current location (auto)</span>
-            </div>
-            <div style="position: relative;">
-              <input type="text" value="${state.routeDestInput}" oninput="searchDestination(this.value)" placeholder="Enter destination (e.g. Civil Lines)" style="width: 100%; padding: 9px 12px; border: 1.5px solid ${T.border}; border-radius: 9px; font-size: 12px; font-family: inherit; background: ${T.inputBg}; color: ${T.text}; outline: none;" />
-              ${state.routeSuggestions.length > 0 ? `
-                <div style="position: absolute; top: 100%; left: 0; right: 0; background: ${T.card}; border: 1px solid ${T.border}; border-radius: 8px; max-height: 160px; overflow-y: auto; z-index: 50; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                  ${suggestions}
-                </div>
-              ` : ''}
-            </div>
-            <button onclick="checkRouteRisk()" style="width: 100%; padding: 10px; background: #2563eb; color: #fff; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 7px;">
-              🔍 Check Route Risk
-            </button>
-            ${routeResultHtml}
-          </div>
-        </div>
-      </div>
-      ${state.showToast ? `
-        <div style="position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 999; max-width: 320px; transition: opacity .3s, transform .3s; opacity: 1; transform: translateY(0); pointer-events: auto;">
-          ${state.toast}
-        </div>
-      ` : ''}
-      <style>
-        @keyframes pulse-anim {
-          0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,.5); }
-          50% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
-        }
-        @media (max-width: 1200px) {
-          .dashboard-grid { grid-template-columns: 1fr 1fr !important; }
-        }
-        @media (max-width: 700px) {
-          .dashboard-grid { grid-template-columns: 1fr !important; padding: 12px !important; }
-        }
-      </style>
-    </div>
-  `;
-
-  document.body.innerHTML = html;
-}
-
-// ─── INIT ────────────────────────────────────────────────────
-
-document.addEventListener('DOMContentLoaded', () => {
-  const tick = () => {
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2, "0");
-    const m = String(now.getMinutes()).padStart(2, "0");
-    const s = String(now.getSeconds()).padStart(2, "0");
-    state.timeStr = `${h}:${m}:${s}`;
-    render();
-  };
-  tick();
-  setInterval(tick, 1000);
-
-  setInterval(() => {
-    const next = (state.tipIndex + 3) % ALL_TIPS.length;
-    state.tips = ALL_TIPS.slice(next, next + 3).concat(ALL_TIPS.slice(0, Math.max(0, next + 3 - ALL_TIPS.length)));
-    state.tipIndex = next;
-    render();
-  }, 6000);
-
-  document.addEventListener('mousedown', (e) => {
-    const dropdown = document.querySelector('.account-dropdown');
-    if (dropdown && !dropdown.contains(e.target)) {
-      state.accountOpen = false;
-      render();
+function closeDropdownOnOutsideClick() {
+  document.addEventListener("click", function(e) {
+    const menu = document.getElementById("accountMenu");
+    if (menu && !menu.contains(e.target)) {
+      document.getElementById("accountDropdown").classList.remove("open");
+      document.getElementById("accountChevron").classList.remove("open");
     }
   });
+}
 
-  render();
-});
+// ── DRIVING TOGGLE ────────────────────────────────────────────
+function toggleDriving() {
+  isDriving = !isDriving;
+  const sw     = document.getElementById("driveToggle");
+  const label  = document.getElementById("driveLabel");
+  const banner = document.getElementById("driveBanner");
+  const notice = document.getElementById("idleNotice");
+  const btn    = document.getElementById("checkBtn");
+
+  sw.classList.toggle("active", isDriving);
+  label.textContent   = isDriving ? "Driving" : "Not Driving";
+  banner.style.display = isDriving ? "flex" : "none";
+  notice.style.display = isDriving ? "none" : "flex";
+  btn.disabled         = !isDriving;
+
+  if (isDriving) {
+    showToast("Driving mode ON — risk monitoring active");
+    speak("Driving mode enabled. RoadEye is now monitoring road risk.");
+  } else {
+    showToast("Driving mode OFF");
+    resetRiskBox();
+  }
+}
+
+function resetRiskBox() {
+  const box = document.getElementById("riskBox");
+  box.className = "risk-box waiting";
+  box.querySelector(".risk-icon-wrap").innerHTML = '<i class="fa-solid fa-shield-halved risk-shield"></i>';
+  setEl("riskText", "Waiting");
+  setEl("riskSub",  "Toggle driving mode and click Check Risk");
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const t = String(now.getHours()).padStart(2,'0') + ":" +
+              String(now.getMinutes()).padStart(2,'0') + ":" +
+              String(now.getSeconds()).padStart(2,'0');
+    setEl("time", t);
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+// ── THEME ─────────────────────────────────────────────────────
+function initTheme() {
+  if (localStorage.getItem("re_theme") === "dark") {
+    document.body.classList.add("dark");
+    setEl("themeLabel", "Light Mode");
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.body.classList.toggle("dark");
+  localStorage.setItem("re_theme", isDark ? "dark" : "light");
+  setEl("themeLabel", isDark ? "Light Mode" : "Dark Mode");
+}
+
+// ── VOICE ─────────────────────────────────────────────────────
+function toggleVoice() {
+  voiceEnabled = !voiceEnabled;
+  setEl("voiceLabel", voiceEnabled ? "Voice On" : "Voice Off");
+  const icon = document.getElementById("voiceIcon");
+  if (icon) icon.className = voiceEnabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark";
+  showToast(voiceEnabled ? "Voice alerts ON" : "Voice alerts OFF");
+}
+
+function speak(text) {
+  if (!voiceEnabled || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "en-IN"; u.rate = 0.9; u.pitch = 1;
+  window.speechSynthesis.speak(u);
+}
+
+// ── GPS ───────────────────────────────────────────────────────
+function initGPS() {
+  setStatus("Requesting GPS permission...", "info");
+  if (!navigator.geolocation) {
+    setStatus("GPS not supported", "error");
+    fetchWeatherFallback(); return;
+  }
+  navigator.geolocation.watchPosition(onGPSSuccess, onGPSError, {
+    enableHighAccuracy: true, timeout: 15000, maximumAge: 30000
+  });
+}
+
+function onGPSSuccess(pos) {
+  currentLat = pos.coords.latitude;
+  currentLon = pos.coords.longitude;
+  const acc  = Math.round(pos.coords.accuracy);
+
+  setEl("location", currentLat.toFixed(4) + ", " + currentLon.toFixed(4) + " (±" + acc + "m)");
+  localStorage.setItem("re_lat", currentLat);
+  localStorage.setItem("re_lon", currentLon);
+
+  currentSegment = getNearestSegment(currentLat, currentLon);
+  updateBlackspot();
+
+  setStatus(acc > 1000 ? "Low GPS accuracy — works better on mobile" : "GPS acquired (±" + acc + "m)",
+            acc > 1000 ? "info" : "success");
+  fetchWeather(currentLat, currentLon);
+  fetchCityName(currentLat, currentLon);
+}
+
+function onGPSError(err) {
+  setEl("location", "GPS denied — using IP location");
+  setStatus("Using IP location fallback", "info");
+  fetchWeatherFallback();
+}
+
+function updateBlackspot() {
+  if (!currentSegment) return;
+  setEl("blackspot", currentSegment.blackspot
+    ? currentSegment.name + " (Risk Zone)"
+    : currentSegment.name + " (Safe)");
+}
+
+// ── CITY ──────────────────────────────────────────────────────
+function fetchCityName(lat, lon) {
+  fetch("https://nominatim.openstreetmap.org/reverse?lat=" + lat + "&lon=" + lon + "&format=json")
+    .then(r => r.json())
+    .then(function(d) {
+      const a = d.address;
+      const city  = a.city || a.town || a.village || "Unknown";
+      const state = a.state || "";
+      const full  = city + (state ? ", " + state : "");
+      setEl("city", full);
+      localStorage.setItem("re_city", full);
+    })
+    .catch(function() { setEl("city", "Unavailable"); });
+}
+
+// ── WEATHER ───────────────────────────────────────────────────
+function fetchWeather(lat, lon) {
+  fetch("https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+    "&current=temperature_2m,relative_humidity_2m,windspeed_10m,weathercode&windspeed_unit=kmh&timezone=auto")
+    .then(r => r.json())
+    .then(function(data) {
+      const c = data.current;
+      currentWeatherCode = c.weathercode;
+      currentWindspeed   = c.windspeed_10m;
+      const desc = decodeWeather(c.weathercode);
+
+      setEl("temperature", c.temperature_2m + " °C");
+      setEl("weather",     desc);
+      setEl("humidity",    c.relative_humidity_2m + "%");
+      setEl("windspeed",   c.windspeed_10m + " km/h");
+
+      localStorage.setItem("re_weather",     desc);
+      localStorage.setItem("re_weatherCode", c.weathercode);
+      localStorage.setItem("re_temp",        c.temperature_2m);
+      localStorage.setItem("re_wind",        c.windspeed_10m);
+      localStorage.setItem("re_humidity",    c.relative_humidity_2m);
+
+      const score = quickScore(c.weathercode, c.windspeed_10m);
+      updateIndicators(score);
+      updateAdvisory(score, c.weathercode, c.windspeed_10m);
+      setStatus("Live weather loaded", "success");
+    })
+    .catch(function() { setStatus("Weather fetch failed", "error"); });
+}
+
+function fetchWeatherFallback() {
+  fetch("https://ipapi.co/json/")
+    .then(r => r.json())
+    .then(function(d) {
+      currentLat = d.latitude; currentLon = d.longitude;
+      setEl("location", "IP: " + d.latitude.toFixed(4) + ", " + d.longitude.toFixed(4));
+      setEl("city", (d.city||"") + (d.region ? ", "+d.region : ""));
+      localStorage.setItem("re_lat", currentLat);
+      localStorage.setItem("re_lon", currentLon);
+      currentSegment = getNearestSegment(currentLat, currentLon);
+      updateBlackspot();
+      fetchWeather(d.latitude, d.longitude);
+    })
+    .catch(function() {
+      currentLat = 26.9124; currentLon = 75.7873;
+      setEl("location", "Default: Jaipur");
+      setEl("city", "Jaipur, Rajasthan");
+      currentSegment = getNearestSegment(currentLat, currentLon);
+      updateBlackspot();
+      fetchWeather(26.9124, 75.7873);
+    });
+}
+
+function decodeWeather(code) {
+  if (code === 0)        return "Clear Sky";
+  if (code <= 2)         return "Partly Cloudy";
+  if (code === 3)        return "Overcast";
+  if (code <= 49)        return "Foggy";
+  if (code <= 55)        return "Drizzle";
+  if (code <= 65)        return "Rain";
+  if (code <= 82)        return "Rain Showers";
+  if (code >= 95)        return "Thunderstorm";
+  return "Unknown";
+}
+
+// ── FEATURE HELPERS ───────────────────────────────────────────
+function getWeatherType(code, wind) {
+  if (code >= 45 && code <= 49)            return 3; // Fog
+  if (code >= 95 || (code >= 61 && code <= 67)) return 2; // Heavy Rain
+  if ((code >= 51 && code <= 57) || (code >= 80 && code <= 82)) return 1; // Light Rain
+  if (getSeason() === 0 && wind > 30)      return 4; // Dust Storm
+  return 0;
+}
+
+function getSeason() {
+  const m = new Date().getMonth() + 1;
+  if (m >= 3 && m <= 6) return 0;
+  if (m >= 7 && m <= 9) return 1;
+  return 2;
+}
+
+function getTimeOfDay() {
+  const h = new Date().getHours();
+  if (h >= 22 || h <= 5)                    return 0;
+  if ((h >= 7 && h <= 9)||(h >= 17 && h <= 20)) return 1;
+  return 2;
+}
+
+function getTrafficDensity() {
+  const h = new Date().getHours();
+  if ((h >= 8 && h <= 10)||(h >= 17 && h <= 20)) return 2;
+  if (h >= 22 || h <= 5)                         return 0;
+  return 1;
+}
+
+function quickScore(code, wind) {
+  let s = 5;
+  if (code >= 95)      s += 45;
+  else if (code >= 61) s += 35;
+  else if (code >= 51) s += 22;
+  else if (code >= 45) s += 30;
+  if (wind > 50) s += 20; else if (wind > 25) s += 10;
+  const h = new Date().getHours();
+  if (h >= 22 || h <= 5) s += 25; else if (h <= 8 || h >= 18) s += 10;
+  return Math.min(100, s);
+}
+
+// ── PREDICT RISK ──────────────────────────────────────────────
+function predictRisk() {
+  if (!isDriving) { showToast("Enable driving mode first"); return; }
+
+  const btn = document.getElementById("checkBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analysing...';
+
+  const seg = currentSegment || {
+    lat:26.9124, lon:75.7873, end_lat:26.915, end_lon:75.793,
+    road_type:1, speed_limit:50, blackspot:0, road_surface:0
+  };
+
+  const payload = {
+    start_latitude:  seg.lat,
+    start_longitude: seg.lon,
+    end_latitude:    seg.end_lat || seg.lat + 0.003,
+    end_longitude:   seg.end_lon || seg.lon + 0.003,
+    road_type:       seg.road_type,
+    speed_limit:     seg.speed_limit || 60,
+    blackspot_flag:  seg.blackspot,
+    road_surface:    seg.road_surface || 0,
+    season:          getSeason(),
+    time_of_day:     getTimeOfDay(),
+    weather_type:    getWeatherType(currentWeatherCode || 0, currentWindspeed || 0),
+    traffic_density: getTrafficDensity()
+  };
+
+  fetch("/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(function(data) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-gauge-high"></i> Check Risk';
+    if (data.error) { showToast("Error: " + data.error); return; }
+    applyRisk(data.risk, data.alert, false);
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-gauge-high"></i> Check Risk';
+    showToast("Cannot reach server. Is Flask running?");
+  });
+}
+
+// ── DEMO MODE ─────────────────────────────────────────────────
+function simulateRisk(level) {
+  const scenarios = {
+    high:   { start_latitude:27.4548, start_longitude:76.0302, end_latitude:27.4562, end_longitude:76.0332, road_type:0, speed_limit:90, blackspot_flag:1, road_surface:2, season:2, time_of_day:0, weather_type:3, traffic_density:2 },
+    medium: { start_latitude:26.9055, start_longitude:75.8455, end_latitude:26.9100, end_longitude:75.8600, road_type:1, speed_limit:60, blackspot_flag:0, road_surface:1, season:1, time_of_day:1, weather_type:1, traffic_density:2 },
+    low:    { start_latitude:26.9215, start_longitude:75.8315, end_latitude:26.9120, end_longitude:75.8200, road_type:1, speed_limit:40, blackspot_flag:0, road_surface:0, season:0, time_of_day:2, weather_type:0, traffic_density:0 }
+  };
+
+  const btn = document.getElementById("checkBtn");
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Simulating...';
+
+  fetch("/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(scenarios[level])
+  })
+  .then(r => r.json())
+  .then(function(data) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-gauge-high"></i> Check Risk';
+    if (data.error) { showToast("Error: " + data.error); return; }
+    applyRisk(data.risk, data.alert, true);
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-gauge-high"></i> Check Risk';
+    showToast("Cannot reach server.");
+  });
+}
+
+// ── APPLY RISK ────────────────────────────────────────────────
+function applyRisk(risk, alert, isDemo) {
+  const box  = document.getElementById("riskBox");
+  const cls  = ["low", "medium", "high"][risk];
+  const icons= ["fa-shield-halved", "fa-triangle-exclamation", "fa-circle-exclamation"];
+  const txt  = ["LOW RISK", "MEDIUM RISK", "HIGH RISK"];
+  const clr  = ["#15803d", "#92400e", "#b91c1c"];
+
+  box.className = "risk-box " + cls;
+  box.querySelector(".risk-icon-wrap").innerHTML =
+    '<i class="fa-solid ' + icons[risk] + ' risk-shield" style="color:' + clr[risk] + '"></i>';
+  setEl("riskText", txt[risk] + (isDemo ? " (Demo)" : ""));
+  setEl("riskSub",  alert);
+
+  // Voice
+  const voices = [
+    "Low risk. Conditions are safe. Drive responsibly.",
+    "Caution. Medium risk. Stay focused and maintain safe speed.",
+    "Warning! High risk detected. Reduce speed immediately."
+  ];
+  speak(voices[risk]);
+
+  // Firebase notification
+  if (typeof sendFirebaseNotification === "function") {
+    const types = ["low","medium","high"];
+    const titles = ["RoadEye — Low Risk", "RoadEye — Medium Risk!", "RoadEye — HIGH RISK Alert!"];
+    if (risk >= 1) sendFirebaseNotification(titles[risk], alert, types[risk]);
+  }
+
+  // Update indicators and advisory
+  const score = risk * 33;
+  updateIndicators(score);
+  updateAdvisory(score, currentWeatherCode, currentWindspeed);
+  saveHistory(txt[risk], score);
+  showToast((isDemo ? "Demo: " : "") + txt[risk]);
+}
+
+// ── ADVISORY ─────────────────────────────────────────────────
+function updateAdvisory(score, code, wind) {
+  const list = document.getElementById("advisoryList");
+  if (!list) return;
+  const tips = [];
+
+  if (score >= 66) {
+    tips.push({ t:"Reduce speed immediately — dangerous conditions ahead", c:"adv-danger", i:"fa-circle-exclamation" });
+    tips.push({ t:"Increase following distance significantly", c:"adv-danger", i:"fa-car" });
+    tips.push({ t:"Avoid phone use completely", c:"adv-warn", i:"fa-mobile-screen-button" });
+  } else if (score >= 33) {
+    tips.push({ t:"Stay focused — conditions not ideal for driving", c:"adv-warn", i:"fa-eye" });
+    tips.push({ t:"Maintain safe speed and distance", c:"adv-warn", i:"fa-gauge-simple" });
+  } else {
+    tips.push({ t:"Conditions are relatively safe — stay alert", c:"adv-ok", i:"fa-circle-check" });
+    tips.push({ t:"Drive at normal speed and observe traffic", c:"adv-ok", i:"fa-road" });
+  }
+
+  if (code !== null) {
+    if (code >= 45 && code <= 49) tips.push({ t:"Fog — use fog lights, reduce speed to 30 km/h", c:"adv-danger", i:"fa-smog" });
+    if (code >= 95)               tips.push({ t:"Thunderstorm — avoid driving if possible", c:"adv-danger", i:"fa-bolt" });
+    if (wind && wind > 40)        tips.push({ t:"Strong winds — keep firm grip on steering", c:"adv-warn", i:"fa-wind" });
+  }
+
+  list.innerHTML = tips.map(function(t) {
+    return '<li class="adv-item ' + t.c + '"><i class="fa-solid ' + t.i + '"></i>' + t.t + '</li>';
+  }).join("");
+}
+
+// ── INDICATORS ────────────────────────────────────────────────
+function updateIndicators(score) {
+  animBar("visBar",     "visPct",     Math.max(10,100-score));
+  animBar("trafficBar", "trafficPct", Math.min(90,20+score*.6));
+  animBar("roadBar",    "roadPct",    Math.max(10,100-score*.8));
+  animBar("wxBar",      "wxPct",      Math.max(10,100-score*.9));
+}
+
+function animBar(barId, pctId, pct) {
+  const bar = document.getElementById(barId);
+  const lbl = document.getElementById(pctId);
+  if (!bar) return;
+  setTimeout(function() {
+    bar.style.width = pct + "%";
+    bar.style.background = pct > 60 ? "#16a34a" : pct > 35 ? "#ea580c" : "#dc2626";
+  }, 80);
+  if (lbl) lbl.textContent = Math.round(pct) + "%";
+}
+
+// ── ROUTE RISK ────────────────────────────────────────────────
+let selectedPlace = null;
+
+function searchDestination(query) {
+  selectedPlace = null;
+
+  const box = document.getElementById("routeSuggestions");
+
+  if (!query || query.length < 3) {
+    box.innerHTML = "";
+    return;
+  }
+
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.length) {
+        box.innerHTML = `<div style="color:red;">No results</div>`;
+        return;
+      }
+
+      box.innerHTML = data.slice(0,5).map(place =>
+        `<div onclick="selectPlace(${place.lat},${place.lon},'${place.display_name.replace(/'/g,"")}')">
+          ${place.display_name}
+        </div>`
+      ).join("");
+    });
+}
+
+function selectPlace(lat, lon, name) {
+  selectedPlace = {
+    lat: parseFloat(lat),
+    lon: parseFloat(lon),
+    name: name
+  };
+
+  document.getElementById("routeDestInput").value = name;
+  document.getElementById("routeSuggestions").innerHTML = "";
+}
+// ── TIPS ──────────────────────────────────────────────────────
+const TIPS_POOL = [
+  { i:"fa-seatbelt",     t:"Always wear seatbelt before starting" },
+  { i:"fa-mobile",       t:"Never use phone while driving" },
+  { i:"fa-car",          t:"Maintain 3-second following distance" },
+  { i:"fa-cloud-rain",   t:"Reduce speed by 30% in rain or fog" },
+  { i:"fa-lightbulb",    t:"Use headlights in low visibility" },
+  { i:"fa-bed",          t:"Take breaks every 2 hours on long drives" },
+];
+
+function loadTips() {
+  const row = document.getElementById("tipsRow");
+  if (!row) return;
+  const shuffled = TIPS_POOL.slice().sort(() => Math.random()-.5).slice(0,3);
+  row.innerHTML = shuffled.map(function(tip) {
+    return '<div class="tip-chip"><i class="fa-solid '+tip.i+'"></i>'+tip.t+'</div>';
+  }).join("");
+}
+
+// ── HISTORY ───────────────────────────────────────────────────
+function saveHistory(risk, score) {
+  const entry = {
+    time:    new Date().toLocaleTimeString(),
+    weather: currentWeatherCode !== null ? decodeWeather(currentWeatherCode) : "--",
+    risk:    risk, score: score
+  };
+  let h = JSON.parse(localStorage.getItem("re_history")||"[]");
+  h.unshift(entry);
+  if (h.length > 10) h = h.slice(0,10);
+  localStorage.setItem("re_history", JSON.stringify(h));
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById("gps-status");
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "gps-status " + type;
+}
+
+let _toastT;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => t.classList.add("hidden"), 3500);
+}
+function checkRouteRisk() {
+  const result = document.getElementById("routeResult");
+
+  if (!currentLat || !currentLon) {
+    showToast("GPS not ready");
+    return;
+  }
+
+  if (!selectedPlace) {
+    showToast("Select destination from suggestions");
+    return;
+  }
+
+  result.style.display = "block";
+  result.textContent = "Checking route risk...";
+
+  const basePayload = {
+    season: getSeason(),
+    time_of_day: getTimeOfDay(),
+    weather_type: getWeatherType(currentWeatherCode||0, currentWindspeed||0),
+    traffic_density: getTrafficDensity()
+  };
+
+  const fromPayload = {
+    ...basePayload,
+    start_latitude: currentLat,
+    start_longitude: currentLon,
+    end_latitude: currentLat + 0.002,
+    end_longitude: currentLon + 0.002,
+    road_type: 1,
+    speed_limit: 50,
+    blackspot_flag: 0,
+    road_surface: 1
+  };
+
+  const toPayload = {
+    ...basePayload,
+    start_latitude: selectedPlace.lat,
+    start_longitude: selectedPlace.lon,
+    end_latitude: selectedPlace.lat + 0.002,
+    end_longitude: selectedPlace.lon + 0.002,
+    road_type: 1,
+    speed_limit: 50,
+    blackspot_flag: 0,
+    road_surface: 1
+  };
+
+  Promise.all([
+    fetch("/predict", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(fromPayload)
+    }).then(r=>r.json()),
+
+    fetch("/predict", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(toPayload)
+    }).then(r=>r.json())
+  ])
+  .then(function(res) {
+    const r1 = res[0].risk;
+    const r2 = res[1].risk;
+    const max = Math.max(r1, r2);
+
+    const labels = ["Low Risk","Medium Risk","High Risk"];
+
+    result.innerHTML =
+      `<b>${labels[max]} on this Route</b><br><br>
+       From: Your Location — ${labels[r1]}<br>
+       To: ${selectedPlace.name} — ${labels[r2]}`;
+  })
+  .catch(function() {
+    result.textContent = "Could not check route.";
+  });
+}
