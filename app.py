@@ -129,17 +129,37 @@ def signup():
         phone    = request.form.get("phone", "").strip()
 
         if not name or not email or not password:
-            return render_template("signup.html", error="Name, email, and password are required.")
+            return render_template(
+        "signup.html",
+        error="Name, email, and password are required.",
+        csrf_token=generate_csrf_token()
+    )
         if not is_valid_email(email):
-            return render_template("signup.html", error="Invalid email format.")
+            return render_template(
+    "signup.html",
+    error="Invalid email format.",
+    csrf_token=generate_csrf_token()
+)
         if len(password) < 8:
-            return render_template("signup.html", error="Password must be at least 8 characters.")
+            return render_template(
+    "signup.html",
+    error="Password must be at least 8 characters.",
+    csrf_token=generate_csrf_token()
+)
         if phone and not is_valid_phone(phone):
-            return render_template("signup.html", error="Phone must be 10 digits only.")
+            return render_template(
+    "signup.html",
+    error="Phone must be 10 digits only.",
+    csrf_token=generate_csrf_token()
+)
 
         existing = User.query.filter_by(email=email).first()
         if existing:
-            return render_template("signup.html", error="Email already registered. Please login.")
+            return render_template(
+                "signup.html",
+                error="Email already registered. Please login.",
+                csrf_token=generate_csrf_token()
+    )
 
         password_hash = generate_password_hash(password)
         new_user = User(name=name, email=email, password=password_hash, phone=phone)
