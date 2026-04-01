@@ -230,24 +230,36 @@
       </div>
     </div>
 
-    <!-- Route Risk -->
     <div class="route-section">
-      <div class="route-title"><i class="fa-solid fa-route"></i> Route Risk Check</div>
-      <div class="route-from-display">
-        <i class="fa-solid fa-location-dot" style="color:#16a34a;"></i>
-        <span id="routeFromLabel">Your current location (auto-detected)</span>
-      </div>
-      <input type="text" class="route-input" id="routeDestInput"
-        placeholder="Type destination (e.g. Sodala, Amer Fort)"
-        oninput="searchDestination(this.value)" autocomplete="off">
-      <div id="routeSuggestions" class="route-suggestions"></div>
-      <button class="route-btn" onclick="checkRouteRisk()">
-        <i class="fa-solid fa-magnifying-glass"></i> Check Route Risk
-      </button>
-      <div id="routeResult" class="route-result" style="display:none;"></div>
-    </div>
+  <div class="route-title">
+    <i class="fa-solid fa-route"></i> Route Risk Check
   </div>
 
+  <!-- FROM -->
+  <div class="route-from-display">
+    <i class="fa-solid fa-location-dot" style="color:#16a34a;"></i>
+    <span>Your current location (auto)</span>
+  </div>
+
+  <!-- DESTINATION INPUT -->
+  <input type="text"
+         id="routeDestInput"
+         class="route-input"
+         placeholder="Type destination (e.g. Chomu Pulia, Delhi Road)"
+         oninput="searchDestination(this.value)"
+         autocomplete="off">
+
+  <!-- SUGGESTIONS -->
+  <div id="routeSuggestions" class="route-suggestions"></div>
+
+  <!-- BUTTON -->
+  <button class="route-btn" onclick="checkRouteRisk()">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    Check Route Risk
+  </button>
+
+  <!-- RESULT -->
+  <div id="routeResult" class="route-result" style="display:none;"></div>
 </div>
 
 <!-- Toast -->

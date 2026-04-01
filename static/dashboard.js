@@ -485,63 +485,44 @@ function animBar(barId, pctId, pct) {
 }
 
 // ── ROUTE RISK ────────────────────────────────────────────────
-function checkRouteRisk() {
-  const fromId = document.getElementById("routeFrom").value;
-  const toId   = document.getElementById("routeTo").value;
-  const result = document.getElementById("routeResult");
+let selectedPlace = null;
 
-  if (!fromId || !toId) { showToast("Select both start and end points"); return; }
-  if (fromId === toId)  { showToast("Start and end cannot be same"); return; }
+function searchDestination(query) {
+  selectedPlace = null;
 
-  const from = roadSegments.find(s => s.id === fromId);
-  const to   = roadSegments.find(s => s.id === toId);
-  if (!from || !to) { showToast("Segment not found"); return; }
+  const box = document.getElementById("routeSuggestions");
 
-  result.style.display = "block";
-  result.style.cssText = "display:block;padding:10px;color:var(--muted);font-size:12px;";
-  result.textContent = "Checking route risk...";
+  if (!query || query.length < 3) {
+    box.innerHTML = "";
+    return;
+  }
 
-  const basePayload = {
-    season: getSeason(), time_of_day: getTimeOfDay(),
-    weather_type: getWeatherType(currentWeatherCode||0, currentWindspeed||0),
-    traffic_density: getTrafficDensity()
-  };
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.length) {
+        box.innerHTML = `<div style="color:red;">No results</div>`;
+        return;
+      }
 
-  Promise.all([
-    fetch("/predict", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ ...basePayload, start_latitude:from.lat, start_longitude:from.lon,
-        end_latitude:from.end_lat||from.lat+.003, end_longitude:from.end_lon||from.lon+.003,
-        road_type:from.road_type, speed_limit:from.speed_limit,
-        blackspot_flag:from.blackspot, road_surface:from.road_surface })
-    }).then(r=>r.json()),
-    fetch("/predict", { method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ ...basePayload, start_latitude:to.lat, start_longitude:to.lon,
-        end_latitude:to.end_lat||to.lat+.003, end_longitude:to.end_lon||to.lon+.003,
-        road_type:to.road_type, speed_limit:to.speed_limit,
-        blackspot_flag:to.blackspot, road_surface:to.road_surface })
-    }).then(r=>r.json())
-  ])
-  .then(function(res) {
-    const r1 = res[0].risk, r2 = res[1].risk;
-    const max = Math.max(r1, r2);
-    const labels = ["Low Risk","Medium Risk","High Risk"];
-    const bgs    = ["#dcfce7","#fef9c3","#fee2e2"];
-    const bords  = ["#86efac","#fcd34d","#fca5a5"];
-    const tcs    = ["#15803d","#92400e","#b91c1c"];
-
-    result.style.cssText = "display:block;padding:12px;border-radius:10px;border:2px solid "+bords[max]+";background:"+bgs[max]+";";
-    result.innerHTML =
-      '<div style="font-size:15px;font-weight:900;color:'+tcs[max]+';margin-bottom:6px;">'+labels[max]+' on Route</div>' +
-      '<div style="font-size:12px;color:#374151;line-height:1.8;">' +
-        '<b>From:</b> '+from.name+' — '+labels[r1]+'<br>' +
-        '<b>To:</b> '+to.name+' — '+labels[r2] +
-      '</div>';
-
-    speak("Route risk is " + labels[max] + ". Plan accordingly.");
-  })
-  .catch(function() { result.textContent = "Could not check route."; });
+      box.innerHTML = data.slice(0,5).map(place =>
+        `<div onclick="selectPlace(${place.lat},${place.lon},'${place.display_name.replace(/'/g,"")}')">
+          ${place.display_name}
+        </div>`
+      ).join("");
+    });
 }
 
+function selectPlace(lat, lon, name) {
+  selectedPlace = {
+    lat: parseFloat(lat),
+    lon: parseFloat(lon),
+    name: name
+  };
+
+  document.getElementById("routeDestInput").value = name;
+  document.getElementById("routeSuggestions").innerHTML = "";
+}
 // ── TIPS ──────────────────────────────────────────────────────
 const TIPS_POOL = [
   { i:"fa-seatbelt",     t:"Always wear seatbelt before starting" },
@@ -595,4 +576,80 @@ function showToast(msg) {
   t.classList.remove("hidden");
   clearTimeout(_toastT);
   _toastT = setTimeout(() => t.classList.add("hidden"), 3500);
+}
+function checkRouteRisk() {
+  const result = document.getElementById("routeResult");
+
+  if (!currentLat || !currentLon) {
+    showToast("GPS not ready");
+    return;
+  }
+
+  if (!selectedPlace) {
+    showToast("Select destination from suggestions");
+    return;
+  }
+
+  result.style.display = "block";
+  result.textContent = "Checking route risk...";
+
+  const basePayload = {
+    season: getSeason(),
+    time_of_day: getTimeOfDay(),
+    weather_type: getWeatherType(currentWeatherCode||0, currentWindspeed||0),
+    traffic_density: getTrafficDensity()
+  };
+
+  const fromPayload = {
+    ...basePayload,
+    start_latitude: currentLat,
+    start_longitude: currentLon,
+    end_latitude: currentLat + 0.002,
+    end_longitude: currentLon + 0.002,
+    road_type: 1,
+    speed_limit: 50,
+    blackspot_flag: 0,
+    road_surface: 1
+  };
+
+  const toPayload = {
+    ...basePayload,
+    start_latitude: selectedPlace.lat,
+    start_longitude: selectedPlace.lon,
+    end_latitude: selectedPlace.lat + 0.002,
+    end_longitude: selectedPlace.lon + 0.002,
+    road_type: 1,
+    speed_limit: 50,
+    blackspot_flag: 0,
+    road_surface: 1
+  };
+
+  Promise.all([
+    fetch("/predict", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(fromPayload)
+    }).then(r=>r.json()),
+
+    fetch("/predict", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(toPayload)
+    }).then(r=>r.json())
+  ])
+  .then(function(res) {
+    const r1 = res[0].risk;
+    const r2 = res[1].risk;
+    const max = Math.max(r1, r2);
+
+    const labels = ["Low Risk","Medium Risk","High Risk"];
+
+    result.innerHTML =
+      `<b>${labels[max]} on this Route</b><br><br>
+       From: Your Location — ${labels[r1]}<br>
+       To: ${selectedPlace.name} — ${labels[r2]}`;
+  })
+  .catch(function() {
+    result.textContent = "Could not check route.";
+  });
 }
