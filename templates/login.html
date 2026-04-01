@@ -41,7 +41,6 @@
 
       <form id="loginForm" action="/login" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
         <div class="input-group">
           <i class="fa-regular fa-envelope"></i>
           <input type="email" name="email" id="loginEmail" placeholder="Email Address" autocomplete="email" required>
@@ -64,7 +63,7 @@
           
         </div>
 
-        <button type="submit" class="auth-btn">Login In</button>
+        <button type="submit" class="auth-btn">Log In</button>
 
         <p class="auth-switch">
           Don't have an account? <a href="/signup">Sign Up</a>
