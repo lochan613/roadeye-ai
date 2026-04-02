@@ -39,8 +39,9 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 # Optional: configure permanent session lifetime and secure defaults.
 
 db = SQLAlchemy(app)
-@app.before_first_request
-def init_db():
+# @app.before_first_request
+# def init_db():
+with app.app_context():
     db.create_all()
 # ← USER MODEL CHANGE (phone field ADD KARO)
 class User(db.Model):
