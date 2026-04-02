@@ -11,10 +11,20 @@ import secrets
 app = Flask(__name__)
 
 # DATABASE URL and settings
-DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///RoadEye.db')
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+import os
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+sqlite_path = os.path.join(BASE_DIR, "RoadEye.db")
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{sqlite_path}"
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Secret key/config from environment (do not hardcode in production)
@@ -29,7 +39,9 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 # Optional: configure permanent session lifetime and secure defaults.
 
 db = SQLAlchemy(app)
-
+@app.before_first_request
+def init_db():
+    db.create_all()
 # ← USER MODEL CHANGE (phone field ADD KARO)
 class User(db.Model):
     __tablename__ = "users"
