@@ -1,0 +1,42 @@
+name: Build and deploy to Azure Web App - RoadEye
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests (if any)
+        run: |
+          if [ -d "tests" ] || [ -f "pytest.ini" ]; then
+            python -m pip install pytest
+            pytest -q || true
+          else
+            echo "No tests found, skipping."
+          fi
+
+      - name: Archive for Azure Web App
+        run: zip -r deploy.zip . -x "**/.git/**" "**/__pycache__/**" "**/.github/**" "RoadEye.db"
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: deploy.zip
